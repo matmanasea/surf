@@ -1,67 +1,63 @@
 #!/usr/bin/env python3
 """Surf Dashboard — Port-Louis, Guadeloupe. Usage: python3 surf_portlouis.py"""
 
-import json, sys, os
+import json, os
 from datetime import datetime, timezone, timedelta
 import requests
 
 SG_KEY   = os.environ.get("SG_KEY", "")
 LAT, LNG = 16.43, -61.54
 AST      = timedelta(hours=-4)
-
 DIRS     = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
 JOURS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
 
 def deg_to_dir(deg):
     if deg is None: return "—"
-    return DIRS[round(deg / 22.5) % 16]
+    return DIRS[round(float(deg) / 22.5) % 16]
 
 def utc_to_ast(t):
     return t + AST
 
-def pick(d, key):
-    if key not in d: return None
-    src = d[key]
-    for s in ["sg","noaa","ecmwf","meteo","dwd"]:
-        if s in src and src[s] is not None:
-            return round(src[s], 2)
-    vals = [v for v in src.values() if v is not None]
-    return round(vals[0], 2) if vals else None
+
+# ─── Open-Meteo ───────────────────────────────────────────────────────────────
+def fetch_open_meteo():
+    print("Fetching Open-Meteo Marine...")
+    om = requests.get("https://marine-api.open-meteo.com/v1/marine", params={
+        "latitude": LAT, "longitude": LNG,
+        "hourly": "wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction",
+        "forecast_days": 7,
+        "timezone": "America/Guadeloupe"
+    }, timeout=15).json()
+
+    print("Fetching Open-Meteo Vent...")
+    ow = requests.get("https://api.open-meteo.com/v1/forecast", params={
+        "latitude": LAT, "longitude": LNG,
+        "hourly": "wind_speed_10m,wind_direction_10m",
+        "forecast_days": 7,
+        "timezone": "America/Guadeloupe",
+        "wind_speed_unit": "kmh"
+    }, timeout=15).json()
+
+    print(f"OK — {len(om['hourly']['time'])} heures")
+    return om, ow
 
 
-def fetch_houle():
-    print("Fetching houle...")
-    now = datetime.now(timezone.utc)
-    r = requests.get(
-        "https://api.stormglass.io/v2/weather/point",
-        params={"lat":LAT,"lng":LNG,
-                "params":"waveHeight,wavePeriod,waveDirection,windSpeed,windDirection,waterTemperature",
-                "start":now.isoformat()},
-        headers={"Authorization": SG_KEY}, timeout=15
-    )
-    r.raise_for_status()
-    data = r.json()
-    print(f"OK — {len(data['hours'])} heures")
-    return data["hours"]
-
-
+# ─── Stormglass marées ────────────────────────────────────────────────────────
 def fetch_marees():
-    print("Fetching marées...")
+    print("Fetching marées Stormglass...")
     now = datetime.now(timezone.utc)
-    r = requests.get(
-        "https://api.stormglass.io/v2/tide/extremes/point",
-        params={"lat":LAT,"lng":LNG,
-                "start":int(now.timestamp()),
-                "end":int((now + timedelta(days=10)).timestamp())},
-        headers={"Authorization": SG_KEY}, timeout=15
-    )
+    r = requests.get("https://api.stormglass.io/v2/tide/extremes/point", params={
+        "lat": LAT, "lng": LNG,
+        "start": int(now.timestamp()),
+        "end":   int((now + timedelta(days=10)).timestamp()),
+    }, headers={"Authorization": SG_KEY}, timeout=15)
     r.raise_for_status()
     data = r.json()
-    print(f"OK — {len(data.get('data',[]))} points marées")
+    print(f"OK — {len(data.get('data', []))} points marées")
 
     marees = []
     for m in data.get("data", []):
-        t_ast = utc_to_ast(datetime.fromisoformat(m["time"].replace("Z","+00:00")))
+        t_ast = utc_to_ast(datetime.fromisoformat(m["time"].replace("Z", "+00:00")))
         marees.append({
             "jour": t_ast.day,
             "h":    round(t_ast.hour + t_ast.minute / 60, 2),
@@ -70,59 +66,71 @@ def fetch_marees():
         })
 
     print("  Marées (AST):")
-    for m in marees[:6]:
+    for m in marees[:4]:
         print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
     return marees
 
 
-def process(hours, marees):
+# ─── Process ──────────────────────────────────────────────────────────────────
+def process(om, ow, marees):
     previsions = []
     CRENEAUX   = {2, 8, 11, 14, 17, 20}
 
-    for h in hours:
-        t_ast   = utc_to_ast(datetime.fromisoformat(h["time"].replace("Z","+00:00")))
-        t_local = t_ast.hour
-        if t_local not in CRENEAUX: continue
+    for i, t in enumerate(om["hourly"]["time"]):
+        h = int(t[11:13])
+        if h not in CRENEAUX:
+            continue
 
-        wh  = pick(h,"waveHeight") or 0
-        wp  = pick(h,"wavePeriod") or 0
-        wd  = pick(h,"waveDirection")
-        ws  = pick(h,"windSpeed")  or 0
-        wsd = pick(h,"windDirection")
-        wt  = pick(h,"waterTemperature")
+        wh  = om["hourly"]["wave_height"][i]
+        wp  = om["hourly"]["wave_period"][i]
+        wd  = om["hourly"]["wave_direction"][i]
+        sh  = om["hourly"]["swell_wave_height"][i]
+        sp  = om["hourly"]["swell_wave_period"][i]
+        sd  = om["hourly"]["swell_wave_direction"][i]
+        ws  = ow["hourly"]["wind_speed_10m"][i]
+        wsd = ow["hourly"]["wind_direction_10m"][i]
+
+        wh  = wh  or 0
+        wp  = wp  or 0
+        ws  = ws  or 0
 
         energie  = round(wh**2 * wp * 0.5 * 10)
-        vent_kmh = round(ws * 3.6)
         vdir     = deg_to_dir(wsd)
         vtype    = "offshore"
         if wsd is not None:
-            if 45 <= wsd <= 135:   vtype = "offshore"
-            elif 135 < wsd <= 225: vtype = "onshore"
-            else:                  vtype = "cross-offshore"
+            if 45 <= float(wsd) <= 135:    vtype = "offshore"
+            elif 135 < float(wsd) <= 225:  vtype = "onshore"
+            else:                          vtype = "cross-offshore"
+
+        t_ast    = datetime.fromisoformat(t)
+        jour_num = t_ast.day
+        jour_nom = JOURS_FR[t_ast.weekday()]
+        moment   = f"{jour_nom} {jour_num} {str(h).zfill(2)}h"
 
         previsions.append({
-            "moment":  f"{JOURS_FR[t_ast.weekday()]} {t_ast.day} {str(t_local).zfill(2)}h",
-            "jour":    t_ast.day,
-            "heure":   t_local,
-            "houle":   round(wh, 1),
-            "periode": round(wp, 0),
-            "dir":     deg_to_dir(wd),
-            "energie": energie,
-            "vent":    vent_kmh,
-            "vdir":    vdir,
-            "vtype":   vtype,
-            "note":    1 if wh >= 0.6 and energie >= 80 else 0,
-            "tempEau": wt,
+            "moment":       moment,
+            "jour":         jour_num,
+            "heure":        h,
+            "houle":        round(wh, 2),
+            "periode":      round(wp, 1),
+            "dir":          deg_to_dir(wd),
+            "swell":        round(sh, 2) if sh else 0,
+            "swellPeriode": round(sp, 1) if sp else 0,
+            "swellDir":     deg_to_dir(sd),
+            "energie":      energie,
+            "vent":         round(ws),
+            "vdir":         vdir,
+            "vtype":        vtype,
+            "note":         1 if wh >= 0.6 and energie >= 50 else 0,
         })
 
     first72  = previsions[:24]
     best     = max(first72, key=lambda x: x["energie"]) if first72 else previsions[0]
-    temp_eau = next((p["tempEau"] for p in previsions if p["tempEau"]), 27.0)
     alertes  = [f"⚠ Vent fort {p['vent']}km/h — {p['moment']}" for p in previsions[:24] if p["vent"] >= 35]
 
     return {
         "updated":     datetime.now().strftime("%a %d %b %Y %Hh%M"),
-        "tempEau":     round(temp_eau, 1) if temp_eau else 27.0,
+        "tempEau":     26.5,
         "alertes":     alertes,
         "bestSession": {"jour": best["jour"], "heure": best["heure"]},
         "marees":      marees,
@@ -130,57 +138,50 @@ def process(hours, marees):
     }
 
 
+# ─── Debug ────────────────────────────────────────────────────────────────────
 def debug(surf):
-    print(f"\n{'='*70}")
-    print(f"Mis à jour: {surf['updated']} | Eau: {surf['tempEau']}°C | Best: jour {surf['bestSession']['jour']} {surf['bestSession']['heure']}h")
-    print(f"{'─'*70}")
+    print(f"\n{'='*75}")
+    print(f"Mis à jour: {surf['updated']} | Best: jour {surf['bestSession']['jour']} {surf['bestSession']['heure']}h")
+    print(f"{'─'*75}")
+    print(f"{'Créneau':<16} {'Houle':>6} {'Pér':>5} {'Dir':>5} {'Swell':>6} {'SwPér':>6} {'kJ':>5} {'Vent':>6} {'VDir':>5}")
+    print(f"{'─'*75}")
     for p in surf["previsions"][:12]:
-        print(f"  {p['moment']:<16} {p['houle']}m {p['periode']}s {p['dir']:<5} {p['energie']:>4}kJ  {p['vent']}km/h {p['vdir']}")
-    print(f"{'='*70}\n")
+        print(f"  {p['moment']:<14} {p['houle']:>5}m {p['periode']:>4}s {p['dir']:>5} {p['swell']:>5}m {p['swellPeriode']:>5}s {p['energie']:>5} {p['vent']:>5}km {p['vdir']:>5}")
+    print(f"{'='*75}\n")
 
 
+# ─── JS ───────────────────────────────────────────────────────────────────────
 JS = r"""
-// ── Palette fond clair ────────────────────────────────────────────────────────
 const C = {
-  houleHigh:  "#2a7a5a",
-  houleMid:   "#4a6a5a",
-  houleLow:   "#aaa",
-  ventFort:   "#aa4a4a",
-  ventMed:    "#8a6a2a",
-  ventLex:    "#2a6a5a",
-  energyHigh: "#2a6a4a",
-  energyMid:  "#5a7a4a",
-  energyLow:  "#bbb",
-  best:       "#2a6a4a",
-  star:       "#7a5a1a",
-  hmColor:    "#2a5a8a",
-  bmColor:    "#7a5a2a",
-  up:         "#2a7a5a",
-  down:       "#8a3a3a",
+  houleHigh: "#2a7a5a", houleMid: "#4a6a5a", houleLow: "#aaa",
+  ventFort:  "#aa4a4a", ventMed:  "#8a6a2a", ventLex:  "#2a6a5a",
+  energyH:   "#2a6a4a", energyM:  "#5a7a4a", energyL:  "#bbb",
+  best:      "#2a6a4a", star:     "#7a5a1a",
+  hmColor:   "#2a5a8a", bmColor:  "#7a5a2a",
+  up:        "#2a7a5a", down:     "#8a3a3a",
 };
 
 const hCol = h => h >= 0.8 ? C.houleHigh : h >= 0.5 ? C.houleMid : C.houleLow;
 const wCol = v => v >= 30 ? C.ventFort : v >= 25 ? C.ventMed : C.ventLex;
-const eCol = e => e >= 150 ? C.energyHigh : e >= 80 ? C.energyMid : C.energyLow;
+const eCol = e => e >= 80 ? C.energyH : e >= 40 ? C.energyM : C.energyL;
 
 const DIR = {
   N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",
   S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘",
-  NNO:"↘",NO:"↘",ONO:"↘",OSO:"→",SSO:"↗",SO:"↗",ENE:"↙",
 };
 
 function verdict(p) {
   const b = Math.max(...p.map(x => x.houle));
   const n = Math.max(...p.map(x => x.note));
-  if (b >= 1.2 || n >= 4) return {v:"GO",        c:"#6a8a7a", ph:"La mer a décidé de coopérer. Rare."};
-  if (b >= 0.65|| n >= 1) return {v:"BORDERLINE", c:"#8a7a5a", ph:"Surfable pour qui sait chercher. Les autres rentrent bredouilles."};
-  return                         {v:"NO-GO",       c:"#8a5a5a", ph:"La mer a pris un jour de congé. Sans culpabilité."};
+  if (b >= 1.2 || n >= 4) return {v:"GO",        c:"#2a7a5a", ph:"La mer a décidé de coopérer. Rare."};
+  if (b >= 0.65|| n >= 1) return {v:"BORDERLINE", c:"#8a6a2a", ph:"Surfable pour qui sait chercher. Les autres rentrent bredouilles."};
+  return                         {v:"NO-GO",       c:"#8a3a3a", ph:"La mer a pris un jour de congé. Sans culpabilité."};
 }
 
 function tideInfo(marees, jour, heure) {
   if (!marees || !marees.length) return {sens:"—", prochain:null};
   const t = jour * 24 + heure;
-  const sorted = [...marees].sort((a,b) => (a.jour*24+a.h) - (b.jour*24+b.h));
+  const sorted = [...marees].sort((a,b) => (a.jour*24+a.h)-(b.jour*24+b.h));
   let prev = null, next = null;
   for (const m of sorted) {
     if (m.jour*24+m.h <= t) prev = m;
@@ -193,60 +194,51 @@ function tideInfo(marees, jour, heure) {
 
 function fmtH(m) {
   if (!m) return "—";
-  const h = Math.floor(m.h), min = Math.round((m.h - h) * 60);
-  return String(h).padStart(2,"0") + "h" + (min > 0 ? String(min).padStart(2,"0") : "");
+  const h = Math.floor(m.h), min = Math.round((m.h-h)*60);
+  return String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
 }
 
 function render() {
   const S = window.SURF_DATA;
   if (!S || !S.previsions || !S.previsions.length) return;
+  const vd = verdict(S.previsions), now = S.previsions[0];
 
-  const vd  = verdict(S.previsions);
-  const now = S.previsions[0];
-
-  document.getElementById("verdict").style.color    = vd.c;
-  document.getElementById("verdict").textContent    = vd.v;
-  document.getElementById("phrase").textContent     = '"' + vd.ph + '"';
-  document.getElementById("now-label").textContent  = "Maintenant · " + now.moment;
+  document.getElementById("verdict").style.color   = vd.c;
+  document.getElementById("verdict").textContent   = vd.v;
+  document.getElementById("phrase").textContent    = '"' + vd.ph + '"';
+  document.getElementById("now-label").textContent = "Maintenant · " + now.moment;
 
   document.getElementById("ngrid").innerHTML = [
-    ["Houle",   now.houle  + "m",              hCol(now.houle)],
-    ["Période", now.periode + "s",             "#555"],
-    ["Dir.",    now.dir,                       "#4a4a4a"],
-    ["Énergie", now.energie + " kJ",           eCol(now.energie)],
-    ["Vent",    now.vent + "km/h " + now.vdir, wCol(now.vent)],
-    ["Eau",     S.tempEau + "°C",              "#5a7a7a"],
+    ["Houle",   now.houle+"m",             hCol(now.houle)],
+    ["Période", now.periode+"s",           "#555"],
+    ["Dir.",    now.dir,                   "#4a4a4a"],
+    ["Swell",   now.swell+"m "+now.swellPeriode+"s", "#3a6a8a"],
+    ["Vent",    now.vent+"km/h "+now.vdir, wCol(now.vent)],
+    ["Eau",     S.tempEau+"°C",            "#2a6a7a"],
   ].map(([l,v,c]) =>
     `<div class="ncell"><div class="nlabel">${l}</div><div class="nval" style="color:${c}">${v}</div></div>`
   ).join("");
 
   if (S.alertes && S.alertes.length) {
     const al = document.getElementById("alerts");
-    al.textContent   = S.alertes.join("  ·  ");
+    al.textContent = S.alertes.join("  ·  ");
     al.style.display = "block";
   }
 
   const B = S.bestSession;
   document.getElementById("tbody").innerHTML = S.previsions.map(r => {
-    const best = B && r.jour === B.jour && r.heure === B.heure;
+    const best = B && r.jour===B.jour && r.heure===B.heure;
     const {sens, prochain} = tideInfo(S.marees, r.jour, r.heure);
-    const up = sens === "montant";
-
-    const bg = best ? "#e8f2ec" : r.note >= 1 ? "#f0f5f0" : "transparent";
-    const bl = best ? `2px solid ${C.best}` : "2px solid transparent";
+    const up   = sens === "montant";
+    const bg   = best ? "#e8f2ec" : r.note>=1 ? "#f0f5f0" : "transparent";
+    const bl   = best ? `2px solid ${C.best}` : "2px solid transparent";
     const badge = best
       ? `<span style="color:${C.best};font-size:0.65rem">▶</span>`
-      : r.note >= 2
-        ? `<span style="color:${C.star};font-size:0.6rem">★</span>`
-        : "";
-
-    const ew  = Math.min(r.energie / 200 * 100, 100);
-    const tc  = up ? C.up : C.down;
-
-    // Marée : flèche + heure + hauteur
-    const mCol  = prochain ? (prochain.type === "H" ? C.hmColor : C.bmColor) : "#bbb";
+      : r.note>=2 ? `<span style="color:${C.star};font-size:0.6rem">★</span>` : "";
+    const ew   = Math.min(r.energie/120*100, 100);
+    const mCol = prochain ? (prochain.type==="H" ? C.hmColor : C.bmColor) : "#bbb";
     const mLabel = prochain
-      ? `${prochain.type === "H" ? "HM" : "BM"} ${fmtH(prochain)} ${prochain.m > 0 ? "+" : ""}${prochain.m}m`
+      ? `${prochain.type==="H"?"HM":"BM"} ${fmtH(prochain)} ${prochain.m>0?"+":""}${prochain.m}m`
       : "—";
 
     return `<tr style="background:${bg};border-left:${bl}">
@@ -256,9 +248,10 @@ function render() {
   <span style="font-size:13px;color:${hCol(r.houle)}">${DIR[r.dir]||"•"}</span>
   <span style="color:${hCol(r.houle)};font-weight:${r.houle>=0.7?400:300}">${r.houle}m</span>
 </div></td>
-<td style="color:#777">${r.periode}s</td>
+<td style="color:#666">${r.periode}s</td>
+<td style="color:#3a6a8a;font-size:0.58rem;white-space:nowrap">${r.swell}m ${r.swellPeriode}s <span style="color:#aaa">${r.swellDir}</span></td>
 <td><div style="display:flex;align-items:center;gap:4px">
-  <div style="flex:1;height:2px;background:#ddd;position:relative;min-width:36px">
+  <div style="flex:1;height:2px;background:#ddd;position:relative;min-width:32px">
     <div style="position:absolute;left:0;top:0;height:100%;width:${ew}%;background:${eCol(r.energie)}"></div>
   </div>
   <span style="font-size:0.54rem;color:${eCol(r.energie)};min-width:22px;text-align:right">${r.energie}</span>
@@ -269,13 +262,14 @@ function render() {
   <span style="color:#999;font-size:0.52rem">${r.vdir}</span>
 </div></td>
 <td><div style="display:flex;align-items:center;gap:4px">
-  <span style="font-size:0.85rem;color:${tc};line-height:1">${up?"↑":"↓"}</span>
+  <span style="font-size:0.85rem;color:${up?C.up:C.down};line-height:1">${up?"↑":"↓"}</span>
   <span style="font-size:0.5rem;color:${mCol}">${mLabel}</span>
 </div></td>
 </tr>`;
   }).join("");
 
-  document.getElementById("foot").textContent = "stormglass.io · " + S.updated + " · live";
+  document.getElementById("foot").textContent =
+    "Open-Meteo · Stormglass · " + S.updated + " · Houle=vague totale | Swell=houle longue distance";
 }
 
 document.addEventListener("DOMContentLoaded", render);
@@ -287,7 +281,7 @@ body { background:#f5f3f0; color:#2a2a2a; font-family:'IBM Plex Mono',monospace;
 .header { padding:1.4rem 1.4rem 0; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:flex-start; }
 .title { font-size:0.95rem; letter-spacing:6px; color:#555; text-transform:uppercase; font-weight:300; }
 .coords { font-size:0.54rem; color:#aaa; letter-spacing:2px; margin-top:0.2rem; padding-bottom:1rem; }
-.btn { background:transparent; border:1px solid #ccc; color:#666; padding:0.4rem 0.9rem; font-family:inherit; font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:border-color 0.2s,color 0.2s; }
+.btn { background:transparent; border:1px solid #ccc; color:#666; padding:0.4rem 0.9rem; font-family:inherit; font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
 .btn:hover { border-color:#999; color:#333; }
 .vbox { padding:1.2rem 1.4rem; border-bottom:1px solid #ddd; }
 .verdict { font-size:1.8rem; letter-spacing:7px; font-weight:300; margin-bottom:0.2rem; }
@@ -300,10 +294,10 @@ body { background:#f5f3f0; color:#2a2a2a; font-family:'IBM Plex Mono',monospace;
 .alerts { padding:0.6rem 1.4rem; border-bottom:1px solid #ddd; font-size:0.6rem; color:#b07a3a; }
 .legend { padding:0.35rem 1.4rem; font-size:0.48rem; color:#bbb; border-bottom:1px solid #e0ddd8; display:flex; gap:1rem; }
 .table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-size:0.62rem; min-width:480px; }
+table { width:100%; border-collapse:collapse; font-size:0.62rem; min-width:560px; }
 th { padding:0.28rem 0.5rem; color:#bbb; font-weight:300; font-size:0.48rem; letter-spacing:1px; text-align:left; border-bottom:1px solid #e0ddd8; }
 td { padding:0.32rem 0.5rem; border-bottom:1px solid #eae7e2; vertical-align:middle; }
-.foot { padding:0.8rem 1.4rem; font-size:0.46rem; color:#ccc; border-top:1px solid #e0ddd8; }
+.foot { padding:0.8rem 1.4rem; font-size:0.44rem; color:#bbb; border-top:1px solid #e0ddd8; font-style:italic; }
 """
 
 
@@ -334,7 +328,7 @@ def generate_html(surf):
         '<div class="table-wrap"><table>'
         '<thead><tr>'
         '<th></th><th>Créneau</th><th>Houle</th><th>Pér.</th>'
-        '<th>Énergie</th><th>Vent</th><th>Marée</th>'
+        '<th>Swell</th><th>Énergie</th><th>Vent</th><th>Marée</th>'
         '</tr></thead>'
         '<tbody id="tbody"></tbody></table></div>'
         '<div class="foot" id="foot"></div>'
@@ -344,9 +338,9 @@ def generate_html(surf):
 
 
 def main():
-    hours  = fetch_houle()
+    om, ow = fetch_open_meteo()
     marees = fetch_marees()
-    surf   = process(hours, marees)
+    surf   = process(om, ow, marees)
     debug(surf)
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "index.html")
     os.makedirs(os.path.dirname(out), exist_ok=True)
