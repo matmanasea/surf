@@ -72,8 +72,7 @@ def fetch_marees():
 
         for i, (tide_type, time_str, jour_str) in enumerate(types_heures):
             t = datetime.strptime(time_str.strip(), "%I:%M %p")
-            hm = float(hauteurs[i]) if i < len(hauteurs) else 0.0
-            marees.append({
+            hm = float(hauteurs[i]) if i < len(hauteurs) else 0.0            marees.append({
                 "jour": int(jour_str),
                 "h":    round(t.hour + t.minute / 60, 2),
                 "m":    hm,
@@ -257,7 +256,7 @@ function render() {
     const ew   = Math.min(r.energie/120*100, 100);
     const mCol = prochain ? (prochain.type==="H" ? C.hmColor : C.bmColor) : "#bbb";
     const mLabel = prochain
-      ? `${prochain.type==="H"?"HM":"BM"} ${fmtH(prochain)} ${prochain.m>0?"+":""}${prochain.m}m`
+      ? `${prochain.type==="H"?"HM":"BM"} ${fmtH(prochain)} ${parseFloat(prochain.m).toFixed(2)}m`
       : "—";
 
     return `<tr style="background:${bg};border-left:${bl}">
