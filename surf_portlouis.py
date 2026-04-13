@@ -72,7 +72,8 @@ def fetch_marees():
 
         for i, (tide_type, time_str, jour_str) in enumerate(types_heures):
             t = datetime.strptime(time_str.strip(), "%I:%M %p")
-            hm = float(hauteurs[i]) if i < len(hauteurs) else 0.0            marees.append({
+            hm = float(hauteurs[i]) if i < len(hauteurs) else 0.0
+            marees.append({
                 "jour": int(jour_str),
                 "h":    round(t.hour + t.minute / 60, 2),
                 "m":    hm,
