@@ -2,13 +2,12 @@ name: Surf Dashboard
 
 on:
   schedule:
-    - cron: '0 */3 * * *'   # toutes les 3h
-  workflow_dispatch:          # bouton manuel sur GitHub
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,12 +23,14 @@ jobs:
       - name: Generate dashboard
         env:
           SG_KEY: ${{ secrets.SG_KEY }}
-        run: python3 surf_portlouis.py
+        run: |
+          python3 surf_portlouis.py
+          touch docs/.nojekyll
 
       - name: Commit & push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
+          git add docs/
           git diff --staged --quiet || git commit -m "Update surf dashboard $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
