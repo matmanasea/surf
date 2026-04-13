@@ -46,23 +46,27 @@ def fetch_all():
 def detect_marees(times, levels):
     marees = []
     n = len(levels)
-    for i in range(1, n - 1):
-        if levels[i] is None or levels[i-1] is None or levels[i+1] is None:
+    i = 1
+    while i < n - 1:
+        if levels[i] is None or levels[i-1] is None:
+            i += 1
             continue
+        # Trouver la fin du plateau
+        j = i
+        while j + 1 < n and levels[j+1] is not None and levels[j+1] == levels[i]:
+            j += 1
+        # Comparer avec après le plateau
+        if j + 1 >= n or levels[j+1] is None:
+            break
+        after = levels[j+1]
+        before = levels[i-1]
         t_loc = datetime.fromisoformat(times[i])
         h_dec = round(t_loc.hour + t_loc.minute / 60, 2)
-        # HM : plus haut que voisins
-        if levels[i] > levels[i-1] and levels[i] > levels[i+1]:
+        if levels[i] > before and levels[i] > after:
             marees.append({"jour": t_loc.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
-        # Plateau HM : égal au suivant mais plus haut que précédent et que i+2
-        elif levels[i] > levels[i-1] and levels[i] == levels[i+1] and i+2 < n and levels[i+2] is not None and levels[i] > levels[i+2]:
-            marees.append({"jour": t_loc.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
-        # BM : plus bas que voisins
-        elif levels[i] < levels[i-1] and levels[i] < levels[i+1]:
+        elif levels[i] < before and levels[i] < after:
             marees.append({"jour": t_loc.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
-        # Plateau BM
-        elif levels[i] < levels[i-1] and levels[i] == levels[i+1] and i+2 < n and levels[i+2] is not None and levels[i] < levels[i+2]:
-            marees.append({"jour": t_loc.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
+        i = j + 1
 
     print(f"Marées détectées: {len(marees)}")
     for m in marees[:8]:
