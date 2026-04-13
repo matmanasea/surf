@@ -43,29 +43,45 @@ def fetch_open_meteo():
 
 
 # ─── Stormglass marées ────────────────────────────────────────────────────────
+# ─── Marées tide-forecast.com (gratuit, sans clé) ────────────────────────────
 def fetch_marees():
-    print("Fetching marées Stormglass...")
+    print("Fetching marées tide-forecast.com...")
     try:
-        now = datetime.now(timezone.utc)
-        r = requests.get("https://api.stormglass.io/v2/tide/extremes/point", params={
-            "lat": LAT, "lng": LNG,
-            "start": int(now.timestamp()),
-            "end":   int((now + timedelta(days=10)).timestamp()),
-        }, headers={"Authorization": SG_KEY}, timeout=15)
+        r = requests.get(
+            "https://www.tide-forecast.com/locations/Port-Louis-1/tides/latest",
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=15
+        )
         r.raise_for_status()
-        data = r.json()
-        print(f"OK — {len(data.get('data', []))} points marées")
 
         marees = []
-        for m in data.get("data", []):
-            t_ast = utc_to_ast(datetime.fromisoformat(m["time"].replace("Z", "+00:00")))
+        import re
+        # Extraire les lignes de marées : "High Tide | 2:35 AM(Mon 13 April) | 1.05 ft (0.32 m)"
+        pattern = r'(High Tide|Low Tide)\s*\|\s*\*\*(\d+:\d+\s+[AP]M)\*\*\s*\((\w+\s+\d+\s+\w+)\)\s*\|\s*\*\*([\d.]+)\s*ft\s*\(([\d.-]+)\s*m\)\*\*'
+        matches = re.findall(pattern, r.text)
+
+        # Mapping mois anglais → numéro
+        MOIS = {"January":1,"February":2,"March":3,"April":4,"May":5,"June":6,
+                "July":7,"August":8,"September":9,"October":10,"November":11,"December":12}
+
+        for m in matches:
+            tide_type, time_str, date_str, ft, height_m = m
+            # Parser heure : "2:35 AM"
+            time_clean = time_str.strip()
+            fmt = "%I:%M %p"
+            t = datetime.strptime(time_clean, fmt)
+            h_dec = round(t.hour + t.minute / 60, 2)
+            # Parser date : "Mon 13 April"
+            parts = date_str.strip().split()
+            jour = int(parts[1])
             marees.append({
-                "jour": t_ast.day,
-                "h":    round(t_ast.hour + t_ast.minute / 60, 2),
-                "m":    round(m["height"], 2),
-                "type": "H" if m["type"] == "high" else "L",
+                "jour": jour,
+                "h":    h_dec,
+                "m":    float(height_m),
+                "type": "H" if "High" in tide_type else "L",
             })
 
+        print(f"OK — {len(marees)} points marées")
         print("  Marées (AST):")
         for m in marees[:6]:
             print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
