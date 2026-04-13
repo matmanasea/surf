@@ -5,11 +5,11 @@ import json, os
 from datetime import datetime, timezone, timedelta
 import requests
 
-SG_KEY   = os.environ.get("SG_KEY", "")
 LAT, LNG = 16.43, -61.54
 AST      = timedelta(hours=-4)
 DIRS     = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
 JOURS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
+CRENEAUX = {5, 8, 11, 14, 17, 20}
 
 def deg_to_dir(deg):
     if deg is None: return "—"
@@ -19,13 +19,13 @@ def utc_to_ast(t):
     return t + AST
 
 
-# ─── Open-Meteo ───────────────────────────────────────────────────────────────
-def fetch_open_meteo():
+# ─── Fetch Open-Meteo (tout en un) ───────────────────────────────────────────
+def fetch_all():
     print("Fetching Open-Meteo Marine...")
     om = requests.get("https://marine-api.open-meteo.com/v1/marine", params={
         "latitude": LAT, "longitude": LNG,
-        "hourly": "wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction",
-        "forecast_days": 7,
+        "hourly": "sea_level_height_msl,wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period",
+        "forecast_days": 16,
         "timezone": "America/Guadeloupe"
     }, timeout=15).json()
 
@@ -33,7 +33,7 @@ def fetch_open_meteo():
     ow = requests.get("https://api.open-meteo.com/v1/forecast", params={
         "latitude": LAT, "longitude": LNG,
         "hourly": "wind_speed_10m,wind_direction_10m",
-        "forecast_days": 7,
+        "forecast_days": 16,
         "timezone": "America/Guadeloupe",
         "wind_speed_unit": "kmh"
     }, timeout=15).json()
@@ -42,316 +42,261 @@ def fetch_open_meteo():
     return om, ow
 
 
-# ─── Stormglass marées ────────────────────────────────────────────────────────
-# ─── Marées tide-forecast.com ────────────────────────────────────────────────
-def fetch_marees():
-    print("Fetching marées tide-forecast.com...")
-    try:
-        r = requests.get(
-            "https://www.tide-forecast.com/locations/Port-Louis-1/tides/latest",
-            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
-            timeout=15
-        )
-        r.raise_for_status()
-
-        import re
-        marees = []
-
-        # Le HTML contient des lignes comme :
-        # | High Tide | **2:35 AM**(Mon 13 April) | **1.05 ft** (0.32 m) |
-        # On cherche ce pattern dans le texte brut
-        # Parser en deux passes : d'abord les types+heures+jours, puis les hauteurs
-        types_heures = re.findall(
-            r'(High Tide|Low Tide)</td><td><b>\s*(\d{1,2}:\d{2}\s*[AP]M)</b><span[^>]*>\((?:\w+\s+)(\d{1,2})\s+\w+\)',
-            r.text
-        )
-        # Plusieurs patterns possibles pour les hauteurs
-        hauteurs = re.findall(r'<b class="js-two-units-length-value__primary">([-\d.]+)\s*m</b>', r.text)
-        if not hauteurs:
-            hauteurs = re.findall(r'"primary">([-\d.]+)\s*m<', r.text)
-        if not hauteurs:
-            hauteurs = re.findall(r'>([-\d.]+)\s*m</b>', r.text)
-
-        print(f"  types_heures: {len(types_heures)}, hauteurs: {len(hauteurs)}, premiers: {hauteurs[:4]}")
-
-        for idx, (tide_type, time_str, jour_str) in enumerate(types_heures):
-            t = datetime.strptime(time_str.strip(), "%I:%M %p")
-            hm = float(hauteurs[idx]) if idx < len(hauteurs) else 0.0
-            marees.append({
-                "jour": int(jour_str),
-                "h":    round(t.hour + t.minute / 60, 2),
-                "m":    hm,
-                "type": "H" if "High" in tide_type else "L",
-            })
-
-        print(f"OK — {len(marees)} points marées")
-        for m in marees[:8]:
-            print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
-        return marees
-
-    except Exception as e:
-        print(f"  ⚠ Marées indisponibles: {e}")
-        return []
+# ─── Détecter HM/BM depuis sea_level_height_msl ──────────────────────────────
+def detect_marees(times, levels):
+    marees = []
+    n = len(levels)
+    for i in range(1, n - 1):
+        if levels[i] is None or levels[i-1] is None or levels[i+1] is None:
+            continue
+        t_ast = utc_to_ast(datetime.fromisoformat(times[i]))
+        h_dec = round(t_ast.hour + t_ast.minute / 60, 2)
+        if levels[i] > levels[i-1] and levels[i] > levels[i+1]:
+            marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
+        elif levels[i] < levels[i-1] and levels[i] < levels[i+1]:
+            marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
+    print(f"Marées détectées: {len(marees)}")
+    for m in marees[:6]:
+        print(f"  Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
+    return marees
 
 
 # ─── Process ──────────────────────────────────────────────────────────────────
-def process(om, ow, marees):
-    previsions = []
-    CRENEAUX   = {2, 8, 11, 14, 17, 20}
+def process(om, ow):
+    times  = om["hourly"]["time"]
+    levels = om["hourly"]["sea_level_height_msl"]
+    marees = detect_marees(times, levels)
 
-    for i, t in enumerate(om["hourly"]["time"]):
-        h = int(t[11:13])
-        if h not in CRENEAUX:
+    previsions = []
+    now_ast    = utc_to_ast(datetime.now(timezone.utc))
+
+    for i, t in enumerate(times):
+        t_ast   = datetime.fromisoformat(t)
+        h_local = t_ast.hour
+        if h_local not in CRENEAUX:
             continue
 
-        wh  = om["hourly"]["wave_height"][i]
-        wp  = om["hourly"]["wave_period"][i]
+        wh  = om["hourly"]["wave_height"][i]          or 0
+        wp  = om["hourly"]["wave_period"][i]           or 0
         wd  = om["hourly"]["wave_direction"][i]
-        sh  = om["hourly"]["swell_wave_height"][i]
-        sp  = om["hourly"]["swell_wave_period"][i]
+        sh  = om["hourly"]["swell_wave_height"][i]     or 0
+        sp  = om["hourly"]["swell_wave_period"][i]     or 0
         sd  = om["hourly"]["swell_wave_direction"][i]
-        ws  = ow["hourly"]["wind_speed_10m"][i]
+        ws  = ow["hourly"]["wind_speed_10m"][i]        or 0
         wsd = ow["hourly"]["wind_direction_10m"][i]
 
-        wh  = wh  or 0
-        wp  = wp  or 0
-        ws  = ws  or 0
+        # Énergie swell (plus pertinente pour le surf)
+        energie = round(sh**2 * sp * 5)
 
-        energie  = round(wh**2 * wp * 0.5 * 10)
-        vdir     = deg_to_dir(wsd)
-        vtype    = "offshore"
+        vtype = "offshore"
         if wsd is not None:
-            if 45 <= float(wsd) <= 135:    vtype = "offshore"
-            elif 135 < float(wsd) <= 225:  vtype = "onshore"
-            else:                          vtype = "cross-offshore"
-
-        t_ast    = datetime.fromisoformat(t)
-        jour_num = t_ast.day
-        jour_nom = JOURS_FR[t_ast.weekday()]
-        moment   = f"{jour_nom} {jour_num} {str(h).zfill(2)}h"
+            if 45 <= float(wsd) <= 135:   vtype = "offshore"
+            elif 135 < float(wsd) <= 225: vtype = "onshore"
+            else:                          vtype = "cross"
 
         previsions.append({
-            "moment":       moment,
-            "jour":         jour_num,
-            "heure":        h,
-            "houle":        round(wh, 2),
-            "periode":      round(wp, 1),
-            "dir":          deg_to_dir(wd),
-            "swell":        round(sh, 2) if sh else 0,
-            "swellPeriode": round(sp, 1) if sp else 0,
-            "swellDir":     deg_to_dir(sd),
-            "energie":      energie,
-            "vent":         round(ws),
-            "vdir":         vdir,
-            "vtype":        vtype,
-            "note":         1 if wh >= 0.6 and energie >= 50 else 0,
+            "moment":    f"{JOURS_FR[t_ast.weekday()]} {t_ast.day} {str(h_local).zfill(2)}h",
+            "jour":      t_ast.day,
+            "heure":     h_local,
+            "dt":        t,
+            "wh":        round(wh, 2),
+            "wp":        round(wp, 1),
+            "wd":        deg_to_dir(wd),
+            "sh":        round(sh, 2),
+            "sp":        round(sp, 1),
+            "sd":        deg_to_dir(sd),
+            "energie":   energie,
+            "vent":      round(ws),
+            "vdir":      deg_to_dir(wsd),
+            "vtype":     vtype,
         })
 
-    first72  = previsions[:24]
-    best     = max(first72, key=lambda x: x["energie"]) if first72 else previsions[0]
-    alertes  = [f"⚠ Vent fort {p['vent']}km/h — {p['moment']}" for p in previsions[:24] if p["vent"] >= 35]
+    # Meilleure session : énergie swell max parmi créneaux >= maintenant, 72h
+    now_str = now_ast.strftime("%Y-%m-%dT%H:%M")
+    future72 = [p for p in previsions if p["dt"] >= now_str[:16] and
+                (datetime.fromisoformat(p["dt"]) - datetime.fromisoformat(now_str[:16])).total_seconds() <= 72*3600]
+    best = max(future72, key=lambda x: x["energie"]) if future72 else (previsions[0] if previsions else None)
+
+    # Créneau actuel
+    current = next((p for p in previsions if p["dt"][:13] == now_str[:13]), previsions[0] if previsions else None)
+
+    alertes = [f"⚠ Vent {p['vent']}km/h — {p['moment']}" for p in previsions[:24] if p["vent"] >= 35]
 
     return {
-        "updated":     datetime.now().strftime("%a %d %b %Y %Hh%M"),
-        "tempEau":     26.5,
+        "updated":     now_ast.strftime("%a %d %b %Y %Hh%M"),
         "alertes":     alertes,
-        "bestSession": {"jour": best["jour"], "heure": best["heure"]},
+        "bestSession": {"jour": best["jour"], "heure": best["heure"]} if best else None,
+        "currentHour": {"jour": current["jour"], "heure": current["heure"]} if current else None,
         "marees":      marees,
         "previsions":  previsions,
     }
 
 
-# ─── Debug ────────────────────────────────────────────────────────────────────
+# ─── Debug terminal ───────────────────────────────────────────────────────────
 def debug(surf):
-    print(f"\n{'='*75}")
-    print(f"Mis à jour: {surf['updated']} | Best: jour {surf['bestSession']['jour']} {surf['bestSession']['heure']}h")
-    print(f"{'─'*75}")
-    print(f"{'Créneau':<16} {'Houle':>6} {'Pér':>5} {'Dir':>5} {'Swell':>6} {'SwPér':>6} {'kJ':>5} {'Vent':>6} {'VDir':>5}")
-    print(f"{'─'*75}")
-    for p in surf["previsions"][:12]:
-        print(f"  {p['moment']:<14} {p['houle']:>5}m {p['periode']:>4}s {p['dir']:>5} {p['swell']:>5}m {p['swellPeriode']:>5}s {p['energie']:>5} {p['vent']:>5}km {p['vdir']:>5}")
-    print(f"{'='*75}\n")
+    print(f"\n{'='*90}")
+    print(f"Mis à jour: {surf['updated']}")
+    if surf['bestSession']:
+        b = surf['bestSession']
+        print(f"Meilleure session: jour {b['jour']} à {b['heure']}h")
+    print(f"{'─'*90}")
+    print(f"{'Créneau':<14} {'Vague':>6} {'Pér':>5} {'DirV':>5} {'Swell':>6} {'Pér':>5} {'DirS':>5} {'kJ':>5} {'Vent':>6} {'VDir':>5} {'Type':<12} {'Marée'}")
+    print(f"{'─'*90}")
+    for p in surf["previsions"][:18]:
+        m_info = ""
+        for m in surf["marees"]:
+            if m["jour"] == p["jour"] and abs(m["h"] - p["heure"]) < 3:
+                m_info = f"{'HM' if m['type']=='H' else 'BM'} {m['m']}m"
+                break
+        print(f"  {p['moment']:<12} {p['wh']:>5}m {p['wp']:>4}s {p['wd']:>5} {p['sh']:>5}m {p['sp']:>4}s {p['sd']:>5} {p['energie']:>5} {p['vent']:>5}km {p['vdir']:>5} {p['vtype']:<12} {m_info}")
+    print(f"{'='*90}\n")
 
 
 # ─── JS ───────────────────────────────────────────────────────────────────────
 JS = r"""
-const C = {
-  houleHigh: "#2a7a5a", houleMid: "#4a6a5a", houleLow: "#aaa",
-  ventFort:  "#aa4a4a", ventMed:  "#8a6a2a", ventLex:  "#2a6a5a",
-  energyH:   "#2a6a4a", energyM:  "#5a7a4a", energyL:  "#bbb",
-  best:      "#2a6a4a", star:     "#7a5a1a",
-  hmColor:   "#2a5a8a", bmColor:  "#7a5a2a",
-  up:        "#2a7a5a", down:     "#8a3a3a",
-};
+const DIR={N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘"};
+const hCol=h=>h>=0.8?"#2a7a5a":h>=0.5?"#4a6a5a":"#aaa";
+const wCol=v=>v>=30?"#aa4a4a":v>=25?"#8a6a2a":"#2a6a5a";
+const eCol=e=>e>=80?"#2a6a4a":e>=40?"#5a7a4a":"#bbb";
+const vCol=t=>t==="offshore"?"#2a6a5a":t==="cross"?"#8a6a2a":"#aa4a4a";
+const vIcon=t=>t==="offshore"?"⬢":t==="cross"?"◈":"⬡";
 
-const hCol = h => h >= 0.8 ? C.houleHigh : h >= 0.5 ? C.houleMid : C.houleLow;
-const wCol = v => v >= 30 ? C.ventFort : v >= 25 ? C.ventMed : C.ventLex;
-const eCol = e => e >= 80 ? C.energyH : e >= 40 ? C.energyM : C.energyL;
-
-const DIR = {
-  N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",
-  S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘",
-};
-
-function verdict(p) {
-  const b = Math.max(...p.map(x => x.houle));
-  const n = Math.max(...p.map(x => x.note));
-  if (b >= 1.2 || n >= 4) return {v:"GO",        c:"#2a7a5a", ph:"La mer a décidé de coopérer. Rare."};
-  if (b >= 0.65|| n >= 1) return {v:"BORDERLINE", c:"#8a6a2a", ph:"Surfable pour qui sait chercher. Les autres rentrent bredouilles."};
-  return                         {v:"NO-GO",       c:"#8a3a3a", ph:"La mer a pris un jour de congé. Sans culpabilité."};
+function verdict(p,now){
+  const fut=p.filter(x=>x.dt>=now).slice(0,24);
+  if(!fut.length)return{v:"—",c:"#999"};
+  const best=Math.max(...fut.map(x=>x.energie));
+  if(best>=120)return{v:"GO",c:"#2a7a5a"};
+  if(best>=60) return{v:"BORDERLINE",c:"#8a6a2a"};
+  return          {v:"NO-GO",c:"#aa4a4a"};
 }
 
-function tideInfo(marees, jour, heure) {
-  if (!marees || !marees.length) return {sens:"—", prochain:null};
-  const t = jour * 24 + heure;
-  const sorted = [...marees].sort((a,b) => (a.jour*24+a.h)-(b.jour*24+b.h));
-  let prev = null, next = null;
-  for (const m of sorted) {
-    if (m.jour*24+m.h <= t) prev = m;
-    else if (!next) next = m;
+function tideCell(marees,jour,heure){
+  if(!marees||!marees.length)return"—";
+  const t=jour*24+heure;
+  const sorted=[...marees].sort((a,b)=>(a.jour*24+a.h)-(b.jour*24+b.h));
+  let prev=null,next=null;
+  for(const m of sorted){
+    if(m.jour*24+m.h<=t)prev=m;
+    else if(!next)next=m;
   }
-  if (!prev && next) return {sens:"montant", prochain:next};
-  if (!next)         return {sens:"descendant", prochain:null};
-  return {sens: next.type==="H" ? "montant" : "descendant", prochain:next};
+  if(!prev&&!next)return"—";
+  const up=next&&next.type==="H";
+  const ref=next||prev;
+  const h=Math.floor(ref.h),min=Math.round((ref.h-h)*60);
+  const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
+  const col=ref.type==="H"?"#2a5a8a":"#7a5a2a";
+  const arrow=up?"↑":"↓";
+  const label=ref.type==="H"?"HM":"BM";
+  return`<span style="color:${col}">${arrow} ${label} ${hStr} <span style="opacity:.7">${ref.m.toFixed(2)}m</span></span>`;
 }
 
-function fmtH(m) {
-  if (!m) return "—";
-  const h = Math.floor(m.h), min = Math.round((m.h-h)*60);
-  return String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
-}
+function render(){
+  const S=window.SURF_DATA;
+  if(!S||!S.previsions||!S.previsions.length)return;
 
-function render() {
-  const S = window.SURF_DATA;
-  if (!S || !S.previsions || !S.previsions.length) return;
-  const vd = verdict(S.previsions), now = S.previsions[0];
+  const nowStr=new Date().toISOString().slice(0,13);
+  const vd=verdict(S.previsions,nowStr);
+  const cur=S.currentHour;
+  const curP=S.previsions.find(p=>cur&&p.jour===cur.jour&&p.heure===cur.heure)||S.previsions[0];
+  const B=S.bestSession;
 
-  document.getElementById("verdict").style.color   = vd.c;
-  document.getElementById("verdict").textContent   = vd.v;
-  document.getElementById("phrase").textContent    = '"' + vd.ph + '"';
-  document.getElementById("now-label").textContent = "Maintenant · " + now.moment;
+  // Verdict simple dans le titre
+  document.getElementById("verdict").textContent=vd.v;
+  document.getElementById("verdict").style.color=vd.c;
+  document.getElementById("updated").textContent=S.updated;
 
-  document.getElementById("ngrid").innerHTML = [
-    ["Houle",   now.houle+"m",             hCol(now.houle)],
-    ["Période", now.periode+"s",           "#555"],
-    ["Dir.",    now.dir,                   "#4a4a4a"],
-    ["Swell",   now.swell+"m "+now.swellPeriode+"s", "#3a6a8a"],
-    ["Vent",    now.vent+"km/h "+now.vdir, wCol(now.vent)],
-    ["Eau",     S.tempEau+"°C",            "#2a6a7a"],
-  ].map(([l,v,c]) =>
-    `<div class="ncell"><div class="nlabel">${l}</div><div class="nval" style="color:${c}">${v}</div></div>`
-  ).join("");
-
-  if (S.alertes && S.alertes.length) {
-    const al = document.getElementById("alerts");
-    al.textContent = S.alertes.join("  ·  ");
-    al.style.display = "block";
+  if(S.alertes&&S.alertes.length){
+    const al=document.getElementById("alerts");
+    al.textContent=S.alertes.join("  ·  ");
+    al.style.display="block";
   }
 
-  const B = S.bestSession;
-  document.getElementById("tbody").innerHTML = S.previsions.map(r => {
-    const best = B && r.jour===B.jour && r.heure===B.heure;
-    const {sens, prochain} = tideInfo(S.marees, r.jour, r.heure);
-    const up   = sens === "montant";
-    const bg   = best ? "#e8f2ec" : r.note>=1 ? "#f0f5f0" : "transparent";
-    const bl   = best ? `2px solid ${C.best}` : "2px solid transparent";
-    const badge = best
-      ? `<span style="color:${C.best};font-size:0.65rem">▶</span>`
-      : r.note>=2 ? `<span style="color:${C.star};font-size:0.6rem">★</span>` : "";
-    const ew   = Math.min(r.energie/120*100, 100);
-    const mCol = prochain ? (prochain.type==="H" ? C.hmColor : C.bmColor) : "#bbb";
-    const mLabel = prochain
-      ? `${prochain.type==="H"?"HM":"BM"} ${fmtH(prochain)} ${parseFloat(prochain.m).toFixed(2)}m`
-      : "—";
-
-    return `<tr style="background:${bg};border-left:${bl}">
-<td style="width:14px;padding-left:0.7rem">${badge}</td>
-<td style="color:${best?"#2a6a4a":r.note>=1?"#3a4a3a":"#555"};white-space:nowrap;font-size:0.58rem;font-weight:${best?400:300}">${r.moment}</td>
-<td><div style="display:flex;align-items:center;gap:3px">
-  <span style="font-size:13px;color:${hCol(r.houle)}">${DIR[r.dir]||"•"}</span>
-  <span style="color:${hCol(r.houle)};font-weight:${r.houle>=0.7?400:300}">${r.houle}m</span>
-</div></td>
-<td style="color:#666">${r.periode}s</td>
-<td style="color:#3a6a8a;font-size:0.58rem;white-space:nowrap">${r.swell}m ${r.swellPeriode}s <span style="color:#aaa">${r.swellDir}</span></td>
-<td><div style="display:flex;align-items:center;gap:4px">
-  <div style="flex:1;height:2px;background:#ddd;position:relative;min-width:32px">
-    <div style="position:absolute;left:0;top:0;height:100%;width:${ew}%;background:${eCol(r.energie)}"></div>
+  document.getElementById("tbody").innerHTML=S.previsions.map(r=>{
+    const isCurrent=cur&&r.jour===cur.jour&&r.heure===cur.heure;
+    const isBest=B&&r.jour===B.jour&&r.heure===B.heure;
+    const bg=isCurrent?"#e8f2ec":isBest?"#f0f5e8":"transparent";
+    const bl=isCurrent?"3px solid #2a7a5a":isBest?"3px solid #8a9a5a":"3px solid transparent";
+    const ew=Math.min(r.energie/150*100,100);
+    const tide=tideCell(S.marees,r.jour,r.heure);
+    return`<tr style="background:${bg};border-left:${bl}">
+<td style="color:${isCurrent?"#2a7a5a":isBest?"#6a7a3a":"#777"};white-space:nowrap;font-size:0.58rem;font-weight:${isCurrent||isBest?500:300}">${r.moment}${isCurrent?' ◀':''}</td>
+<td style="white-space:nowrap">
+  <span style="color:${hCol(r.wh)};font-size:12px">${DIR[r.wd]||"•"}</span>
+  <span style="color:${hCol(r.wh)};font-weight:${r.wh>=0.7?500:300}"> ${r.wh}m</span>
+  <span style="color:#999;font-size:0.52rem"> ${r.wp}s</span>
+</td>
+<td style="white-space:nowrap;color:#3a6a8a">
+  <span style="font-size:12px">${DIR[r.sd]||"•"}</span>
+  <span style="font-weight:${r.sh>=0.5?500:300}"> ${r.sh}m</span>
+  <span style="font-size:0.52rem;color:#999"> ${r.sp}s</span>
+</td>
+<td>
+  <div style="display:flex;align-items:center;gap:3px">
+    <div style="flex:1;height:2px;background:#e0ddd8;position:relative;min-width:28px">
+      <div style="position:absolute;left:0;top:0;height:100%;width:${ew}%;background:${eCol(r.energie)}"></div>
+    </div>
+    <span style="font-size:0.52rem;color:${eCol(r.energie)};min-width:20px;text-align:right">${r.energie}</span>
   </div>
-  <span style="font-size:0.54rem;color:${eCol(r.energie)};min-width:22px;text-align:right">${r.energie}</span>
-</div></td>
-<td><div style="display:flex;align-items:center;gap:3px">
-  <span style="font-size:13px;color:${wCol(r.vent)}">${DIR[r.vdir]||"•"}</span>
-  <span style="color:${wCol(r.vent)}">${r.vent}</span>
-  <span style="color:#999;font-size:0.52rem">${r.vdir}</span>
-</div></td>
-<td><div style="display:flex;align-items:center;gap:4px">
-  <span style="font-size:0.85rem;color:${up?C.up:C.down};line-height:1">${up?"↑":"↓"}</span>
-  <span style="font-size:0.5rem;color:${mCol}">${mLabel}</span>
-</div></td>
+</td>
+<td style="white-space:nowrap">
+  <span style="font-size:12px;color:${wCol(r.vent)}">${DIR[r.vdir]||"•"}</span>
+  <span style="color:${wCol(r.vent)}"> ${r.vent}</span>
+  <span style="color:#999;font-size:0.52rem"> ${r.vdir}</span>
+</td>
+<td style="font-size:0.52rem;color:${vCol(r.vtype)};text-align:center">${vIcon(r.vtype)} ${r.vtype}</td>
+<td style="font-size:0.52rem;white-space:nowrap">${tide}</td>
 </tr>`;
   }).join("");
 
-  document.getElementById("foot").textContent =
-    "Open-Meteo · Stormglass · " + S.updated + " · Houle=vague totale | Swell=houle longue distance";
+  document.getElementById("foot").textContent="Open-Meteo · "+S.updated+" · Vague=vague totale | Swell=houle longue distance | kJ=énergie swell";
 }
 
-document.addEventListener("DOMContentLoaded", render);
+document.addEventListener("DOMContentLoaded",render);
 """
 
 CSS = """
-* { box-sizing:border-box; margin:0; padding:0; }
-body { background:#f5f3f0; color:#2a2a2a; font-family:'IBM Plex Mono',monospace; min-height:100vh; }
-.header { padding:1.4rem 1.4rem 0; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:flex-start; }
-.title { font-size:0.95rem; letter-spacing:6px; color:#555; text-transform:uppercase; font-weight:300; }
-.coords { font-size:0.54rem; color:#aaa; letter-spacing:2px; margin-top:0.2rem; padding-bottom:1rem; }
-.btn { background:transparent; border:1px solid #ccc; color:#666; padding:0.4rem 0.9rem; font-family:inherit; font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
-.btn:hover { border-color:#999; color:#333; }
-.vbox { padding:1.2rem 1.4rem; border-bottom:1px solid #ddd; }
-.verdict { font-size:1.8rem; letter-spacing:7px; font-weight:300; margin-bottom:0.2rem; }
-.phrase { font-size:0.66rem; color:#999; font-style:italic; margin-bottom:0.8rem; }
-.now-label { font-size:0.5rem; color:#bbb; letter-spacing:2px; margin-bottom:0.4rem; text-transform:uppercase; }
-.ngrid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#e8e5e0; margin-top:0.8rem; }
-.ncell { background:#f5f3f0; padding:0.8rem; }
-.nlabel { font-size:0.48rem; color:#bbb; letter-spacing:2px; text-transform:uppercase; margin-bottom:0.25rem; }
-.nval { font-size:1rem; font-weight:300; }
-.alerts { padding:0.6rem 1.4rem; border-bottom:1px solid #ddd; font-size:0.6rem; color:#b07a3a; }
-.legend { padding:0.35rem 1.4rem; font-size:0.48rem; color:#bbb; border-bottom:1px solid #e0ddd8; display:flex; gap:1rem; }
-.table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-size:0.62rem; min-width:560px; }
-th { padding:0.28rem 0.5rem; color:#bbb; font-weight:300; font-size:0.48rem; letter-spacing:1px; text-align:left; border-bottom:1px solid #e0ddd8; }
-td { padding:0.32rem 0.5rem; border-bottom:1px solid #eae7e2; vertical-align:middle; }
-.foot { padding:0.8rem 1.4rem; font-size:0.44rem; color:#bbb; border-top:1px solid #e0ddd8; font-style:italic; }
+* {box-sizing:border-box;margin:0;padding:0}
+body {background:#f5f3f0;color:#2a2a2a;font-family:'IBM Plex Mono',monospace;min-height:100vh}
+.header {padding:1rem 1.4rem;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+.title-row {display:flex;align-items:baseline;gap:1rem}
+.title {font-size:0.9rem;letter-spacing:5px;color:#555;text-transform:uppercase;font-weight:300}
+.verdict {font-size:1.4rem;letter-spacing:4px;font-weight:300}
+.updated {font-size:0.46rem;color:#bbb;letter-spacing:1px}
+.btn {background:transparent;border:1px solid #ccc;color:#666;padding:0.35rem 0.8rem;font-family:inherit;font-size:0.56rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+.btn:hover {border-color:#999;color:#333}
+.alerts {padding:0.5rem 1.4rem;border-bottom:1px solid #ddd;font-size:0.58rem;color:#b07a3a}
+.table-wrap {overflow-x:auto}
+table {width:100%;border-collapse:collapse;font-size:0.62rem;min-width:520px}
+th {padding:0.3rem 0.6rem;color:#bbb;font-weight:300;font-size:0.46rem;letter-spacing:1px;text-align:left;border-bottom:1px solid #e0ddd8;white-space:nowrap}
+td {padding:0.35rem 0.6rem;border-bottom:1px solid #eae7e2;vertical-align:middle}
+.foot {padding:0.6rem 1.4rem;font-size:0.44rem;color:#bbb;border-top:1px solid #e0ddd8;font-style:italic}
 """
-
 
 def generate_html(surf):
     data_json = json.dumps(surf, ensure_ascii=False)
     return (
         '<!DOCTYPE html><html lang="fr"><head>'
         '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta http-equiv="refresh" content="3600">'
         '<title>Port-Louis · Surf</title>'
-        '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">'
+        '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">'
         f'<style>{CSS}</style></head><body>'
         f'<script>window.SURF_DATA={data_json};</script>'
-        '<div class="header"><div>'
+        '<div class="header">'
+        '<div>'
+        '<div class="title-row">'
         '<div class="title">Port-Louis · Surf</div>'
-        '<div class="coords">Grande-Terre · Guadeloupe · 16.43°N 61.54°W</div>'
-        '</div><button class="btn" onclick="location.reload()">↺ Actualiser</button></div>'
-        '<div class="vbox">'
         '<div class="verdict" id="verdict"></div>'
-        '<div class="phrase" id="phrase"></div>'
-        '<div class="now-label" id="now-label"></div>'
-        '<div class="ngrid" id="ngrid"></div>'
+        '</div>'
+        '<div class="updated" id="updated"></div>'
+        '</div>'
+        '<button class="btn" onclick="location.reload()">↺ Actualiser</button>'
         '</div>'
         '<div class="alerts" id="alerts" style="display:none"></div>'
-        '<div class="legend">'
-        '<span style="color:#4a6a5a">▶ meilleure session 72h</span>'
-        '<span style="color:#6a5a3a">★ note ≥ 2</span>'
-        '</div>'
         '<div class="table-wrap"><table>'
         '<thead><tr>'
-        '<th></th><th>Créneau</th><th>Houle</th><th>Pér.</th>'
-        '<th>Swell</th><th>Énergie</th><th>Vent</th><th>Marée</th>'
+        '<th>Créneau</th><th>Vague</th><th>Swell</th>'
+        '<th>kJ</th><th>Vent</th><th>Conditions</th><th>Marée</th>'
         '</tr></thead>'
         '<tbody id="tbody"></tbody></table></div>'
         '<div class="foot" id="foot"></div>'
@@ -359,11 +304,9 @@ def generate_html(surf):
         '</body></html>'
     )
 
-
 def main():
-    om, ow = fetch_open_meteo()
-    marees = fetch_marees()
-    surf   = process(om, ow, marees)
+    om, ow = fetch_all()
+    surf   = process(om, ow)
     debug(surf)
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "index.html")
     os.makedirs(os.path.dirname(out), exist_ok=True)
