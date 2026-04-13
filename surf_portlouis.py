@@ -56,10 +56,10 @@ def detect_marees(times, levels):
             j += 1
         if j + 1 >= n or levels[j+1] is None:
             break
-        after = levels[j+1]
+        after  = levels[j+1]
         before = levels[i-1]
-        t_loc = datetime.fromisoformat(times[i])
-        h_dec = round(t_loc.hour + t_loc.minute / 60, 2)
+        t_loc  = datetime.fromisoformat(times[i])
+        h_dec  = round(t_loc.hour + t_loc.minute / 60, 2)
         if levels[i] > before and levels[i] > after:
             marees.append({"jour": t_loc.day, "mois": t_loc.month, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
         elif levels[i] < before and levels[i] < after:
@@ -68,12 +68,11 @@ def detect_marees(times, levels):
 
     print(f"Marées détectées: {len(marees)}")
     for m in marees[:8]:
-        t = "HM" if m['type'] == "H" else "BM"
-        print(f"  Jour {m['jour']} {m['h']:.2f}h -> {m['m']}m {t}")
+        print(f"  Jour {m['jour']} {m['h']:.2f}h -> {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
     return marees
 
 
-# ─── Process ──────────────────────────────────────────────────────────────────
+# ─── Process ─────────────────────────────────────────────────────────────────
 def process(om, ow):
     times  = om["hourly"]["time"]
     levels = om["hourly"]["sea_level_height_msl"]
@@ -99,12 +98,6 @@ def process(om, ow):
 
         energie = round(sh**2 * sp * 5)
 
-        vtype = "offshore"
-        if wsd is not None:
-            if 45 <= float(wsd) <= 135:   vtype = "offshore"
-            elif 135 < float(wsd) <= 225: vtype = "onshore"
-            else:                          vtype = "cross"
-
         previsions.append({
             "label":   f"{JOURS_FR[t_ast.weekday()]} {t_ast.day}",
             "jour":    t_ast.day,
@@ -120,10 +113,10 @@ def process(om, ow):
             "energie": energie,
             "vent":    round(ws),
             "vdir":    deg_to_dir(wsd),
-            "vtype":   vtype,
         })
 
-    alertes = [f"⚠ Vent {p['vent']}km/h — {p['label']} {p['heure']:02d}h" for p in previsions[:24] if p["vent"] >= 35]
+    alertes = [f"⚠ Vent {p['vent']}km/h — {p['label']} {p['heure']:02d}h"
+               for p in previsions[:24] if p["vent"] >= 35]
 
     return {
         "updated":    now_ast.strftime("%a %d %b %Y %Hh%M"),
@@ -139,236 +132,240 @@ def debug(surf):
     print(f"Mis à jour: {surf['updated']}")
     print(f"{'─'*80}")
     for p in surf["previsions"][:18]:
-        print(f"  {p['label']} {p['heure']:02d}h  sh={p['sh']}m sp={p['sp']}s  e={p['energie']}  vent={p['vent']}km {p['vtype']}")
+        print(f"  {p['label']} {p['heure']:02d}h  sh={p['sh']}m sp={p['sp']}s  e={p['energie']}  vent={p['vent']}km")
     print(f"{'='*80}\n")
 
+
+# ─── CSS ─────────────────────────────────────────────────────────────────────
+CSS = """
+:root {
+  --bg:   #f4f2ef;
+  --bg2:  #eceae6;
+  --card: #ffffff;
+  --bdr:  #dedad4;
+  --sep:  #c8c4bc;
+  --txt:  #1a1a1a;
+  --mut:  #888;
+  --fnt:  #bbb;
+  --lw:   68px;
+  --cw:   52px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', monospace; font-size: 11px; min-height: 100vh; }
+
+.hdr { padding: 11px 14px; border-bottom: 1px solid var(--bdr); display: flex; justify-content: space-between; align-items: center; background: var(--card); position: sticky; top: 0; z-index: 200; }
+.hdr-l { display: flex; align-items: baseline; gap: 10px; }
+.site { font-size: 9px; letter-spacing: 5px; color: var(--mut); text-transform: uppercase; font-weight: 300; }
+#verdict { font-size: 17px; letter-spacing: 3px; font-weight: 300; }
+#upd { font-size: 8.5px; color: var(--fnt); letter-spacing: 1px; margin-top: 2px; }
+.btn { background: transparent; border: 1px solid var(--bdr); color: var(--mut); padding: 4px 11px; font-family: inherit; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+.btn:hover { border-color: #999; color: var(--txt); }
+.alerts { padding: 5px 14px; background: #fdf5e8; border-bottom: 1px solid #e8d8a0; font-size: 9px; color: #8a6020; display: none; }
+
+.wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tbl { border-collapse: collapse; table-layout: fixed; }
+
+.lbl {
+  position: sticky; left: 0; z-index: 10;
+  width: var(--lw); min-width: var(--lw); max-width: var(--lw);
+  background: var(--bg);
+  border-right: 1px solid var(--sep);
+  border-bottom: 1px solid var(--bdr);
+  text-align: right; padding: 0 7px;
+  font-size: 8px; letter-spacing: 1px; color: var(--fnt);
+  font-weight: 300; text-transform: uppercase;
+  white-space: nowrap; vertical-align: middle;
+}
+.lbl.sect { background: var(--bg2); color: var(--mut); font-size: 7.5px; border-bottom: 1px solid var(--sep); font-weight: 400; }
+
+.dc { width: var(--cw); min-width: var(--cw); max-width: var(--cw); border-bottom: 1px solid var(--bdr); border-right: 1px solid #ebe8e3; text-align: center; vertical-align: middle; white-space: nowrap; position: relative; }
+.dc.sep { border-left: 2px solid var(--sep); }
+
+tr.r-day  td { height: 22px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
+tr.r-time td { height: 26px; background: var(--card); }
+tr.r-sect td { height: 11px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
+tr.r-vdir td { height: 26px; background: #fafaf8; }
+tr.r-vkmh td { height: 26px; background: var(--card); }
+tr.r-sdir td { height: 26px; background: #fafaf8; }
+tr.r-sh   td { height: 26px; background: var(--card); }
+tr.r-sp   td { height: 26px; background: #fafaf8; }
+tr.r-skj  td { height: 26px; background: var(--card); }
+tr.r-wdir td { height: 26px; background: #fafaf8; }
+tr.r-wh   td { height: 26px; background: var(--card); }
+tr.r-wp   td { height: 26px; background: #fafaf8; }
+tr.r-marr td { height: 26px; background: var(--card); }
+tr.r-mhbm td { height: 26px; background: #fafaf8; }
+tr.r-mm   td { height: 26px; background: var(--card); }
+
+tr.r-day  .lbl { background: var(--bg2); }
+tr.r-time .lbl { background: var(--bg); }
+tr.r-sect .lbl { background: var(--bg2); }
+tr.r-vdir .lbl { background: #f5f3f0; }
+tr.r-vkmh .lbl { background: var(--bg); }
+tr.r-sdir .lbl { background: #f5f3f0; }
+tr.r-sh   .lbl { background: var(--bg); }
+tr.r-sp   .lbl { background: #f5f3f0; }
+tr.r-skj  .lbl { background: var(--bg); }
+tr.r-wdir .lbl { background: #f5f3f0; }
+tr.r-wh   .lbl { background: var(--bg); }
+tr.r-wp   .lbl { background: #f5f3f0; }
+tr.r-marr .lbl { background: var(--bg); }
+tr.r-mhbm .lbl { background: #f5f3f0; }
+tr.r-mm   .lbl { background: var(--bg); }
+
+.day-cell { font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--mut); font-weight: 400; }
+.day-cell.today { color: #2d7a52; font-weight: 500; }
+.time-cell { font-size: 10px; color: var(--mut); font-weight: 300; }
+.time-cell.is-now  { color: #2d7a52; font-weight: 600; background: #e8f2ec; }
+.time-cell.is-best { color: #8a6e2a; font-weight: 500; background: #f5f2ea; }
+
+.kj-bar  { width: 32px; height: 3px; background: #e0ddd8; position: relative; display: inline-block; vertical-align: middle; margin-right: 2px; }
+.kj-fill { position: absolute; left: 0; top: 0; height: 100%; }
+
+.foot { padding: 7px 14px; font-size: 8px; color: var(--fnt); border-top: 1px solid var(--bdr); font-style: italic; }
+"""
 
 # ─── JS ──────────────────────────────────────────────────────────────────────
 JS = r"""
 const PROP_DEG={N:180,NNE:202,NE:225,ENE:247,E:270,ESE:292,SE:315,SSE:337,S:0,SSW:22,SW:45,WSW:67,W:90,WNW:112,NW:135,NNW:157};
-const CRENEAUX=[5,8,11,14,17,20];
+const arr=(dir,col,sz=13)=>
+  `<span style="display:inline-block;transform:rotate(${PROP_DEG[dir]||0}deg);color:${col};font-size:${sz}px;line-height:1">↑</span>`;
 
-function propArrow(dir,col,sz){
-  const d=PROP_DEG[dir]||0;
-  return`<span style="display:inline-block;transform:rotate(${d}deg);color:${col};font-size:${sz||11}px;line-height:1">↑</span>`;
+const wCol=v=>v>=30?'#a03030':v>=20?'#8a6e2a':'#2d7a52';
+const sCol=s=>s>=0.8?'#1e5f8a':s>=0.5?'#3a7aaa':'#aaa';
+const hCol=h=>h>=0.8?'#1e6a42':h>=0.5?'#3a8a62':'#aaa';
+const eCol=e=>e>=80?'#2a6a44':e>=40?'#5a7a44':'#bbb';
+
+function verdictGlobal(prev,now){
+  const fut=prev.filter(x=>new Date(x.dt)>=now).slice(0,24);
+  if(!fut.length)return{v:'—',c:'#999'};
+  const b=Math.max(...fut.map(x=>x.energie));
+  return b>=120?{v:'GO',c:'#2d7a52'}:b>=60?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
 }
-const hCol=h=>h>=0.8?"#2a7a5a":h>=0.5?"#4a6a5a":"#aaa";
-const wCol=v=>v>=30?"#aa4a4a":v>=25?"#8a6a2a":"#2a6a5a";
-const eCol=e=>e>=80?"#2a6a4a":e>=40?"#5a7a4a":"#ccc";
-
-// Verdict global 24h
-function verdictGlobal(previsions, nowDt){
-  const fut=previsions.filter(x=>new Date(x.dt)>=nowDt).slice(0,24);
-  if(!fut.length)return{v:"—",c:"#999"};
-  const best=Math.max(...fut.map(x=>x.energie));
-  if(best>=120)return{v:"GO",c:"#2a7a5a"};
-  if(best>=60) return{v:"BORDERLINE",c:"#8a6a2a"};
-  return          {v:"NO-GO",c:"#aa4a4a"};
-}
-
-// Verdict d'un jour (énergie max des créneaux du jour)
 function verdictJour(slots){
-  const best=Math.max(...slots.map(x=>x.energie));
-  if(best>=120)return{v:"GO",c:"#2a7a5a"};
-  if(best>=60) return{v:"BORDERLINE",c:"#8a6a2a"};
-  return          {v:"NO-GO",c:"#aa4a4a"};
+  const b=Math.max(...slots.map(x=>x.energie));
+  return b>=120?{v:'GO',c:'#2d7a52'}:b>=60?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
 }
-
-// Prochain extrême de marée après un créneau donné
-function nextTide(marees, jour, mois, heure){
-  if(!marees||!marees.length) return null;
-  const t = jour*10000 + mois*100 + heure; // clé de tri approximative
-  const sorted=[...marees].sort((a,b)=>{
-    const ka=a.jour*10000+a.mois*100+a.h;
-    const kb=b.jour*10000+b.mois*100+b.h;
-    return ka-kb;
-  });
-  // chercher le premier extrême strictement après l'heure du créneau
-  for(const m of sorted){
-    const km=m.jour*10000+m.mois*100+m.h;
-    const kc=jour*10000+mois*100+heure;
-    if(km>kc) return m;
-  }
+function nextTide(marees,jour,mois,heure){
+  if(!marees||!marees.length)return null;
+  const sorted=[...marees].sort((a,b)=>(a.jour*10000+a.mois*100+a.h)-(b.jour*10000+b.mois*100+b.h));
+  for(const m of sorted)
+    if(m.jour*10000+m.mois*100+m.h>jour*10000+mois*100+heure)return m;
   return null;
 }
-
-function fmtTide(m){
-  if(!m)return"—";
-  const h=Math.floor(m.h), min=Math.round((m.h-h)*60);
-  const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
-  const col=m.type==="H"?"#3a6a9a":"#9a7a3a";
-  const arrow=m.type==="H"?"↑":"↓";
-  return`<span style="color:${col}">${arrow}${m.type==="H"?"HM":"BM"} ${hStr}<br>${m.m.toFixed(2)}m</span>`;
-}
-
-// Calculer créneau actuel (index dans CRENEAUX) et best 72h
-function computeHighlights(previsions, nowDt){
-  const nowMs=nowDt.getTime();
-  const ms72=72*3600*1000;
-
-  // créneau actuel = créneau dont dt est le plus proche de maintenant (passé ou futur dans ±3h)
-  let curKey=null, minDiff=Infinity;
-  for(const p of previsions){
-    const diff=Math.abs(new Date(p.dt).getTime()-nowMs);
-    if(diff<minDiff){minDiff=diff;curKey=p.dt;}
-  }
-
-  // meilleure session dans les 72h à venir
-  const future=previsions.filter(p=>new Date(p.dt)>=nowDt && new Date(p.dt).getTime()-nowMs<=ms72);
-  let bestKey=null;
-  if(future.length){
-    const bst=future.reduce((a,b)=>b.energie>a.energie?b:a);
-    bestKey=bst.dt;
-  }
-
-  return{curKey, bestKey};
+function tHStr(m){
+  const h=Math.floor(m.h),mn=Math.round((m.h-h)*60);
+  return String(h).padStart(2,'0')+'h'+(mn>0?String(mn).padStart(2,'0'):'');
 }
 
 function render(){
   const S=window.SURF_DATA;
   if(!S||!S.previsions||!S.previsions.length)return;
-
-  const nowDt=new Date();
-  // Ajuster en AST (UTC-4) pour comparer avec les dt locaux
-  // Les dt dans les données sont en heure locale Guadeloupe (AST)
-  // new Date() est UTC — on crée une string locale AST pour comparer
-  const nowAST=new Date(nowDt.getTime()-4*3600*1000);
-  const nowASTStr=nowAST.toISOString().slice(0,16).replace("T"," "); // "2026-04-13 11:00"
-
-  const {curKey,bestKey}=computeHighlights(S.previsions, nowDt);
-
-  const vd=verdictGlobal(S.previsions, nowDt);
-  document.getElementById("verdict").textContent=vd.v;
-  document.getElementById("verdict").style.color=vd.c;
-  document.getElementById("updated").textContent=S.updated;
-
+  const now=new Date();
+  const vd=verdictGlobal(S.previsions,now);
+  document.getElementById('verdict').textContent=vd.v;
+  document.getElementById('verdict').style.color=vd.c;
+  document.getElementById('upd').textContent=S.updated;
   if(S.alertes&&S.alertes.length){
-    const al=document.getElementById("alerts");
-    al.textContent=S.alertes.join("  ·  ");
-    al.style.display="block";
+    const al=document.getElementById('alerts');
+    al.textContent=S.alertes.join('  ·  ');al.style.display='block';
   }
 
-  // Grouper par jour (label = "Lun 14")
-  const days=[];
-  let cur=null;
+  const nowMs=now.getTime(),ms72=72*3600*1000;
+  let curKey=null,minDiff=Infinity;
   for(const p of S.previsions){
-    if(!cur||cur.label!==p.label){
-      cur={label:p.label,slots:[]};
-      days.push(cur);
-    }
-    cur.slots.push(p);
+    const d=Math.abs(new Date(p.dt).getTime()-nowMs);
+    if(d<minDiff){minDiff=d;curKey=p.dt;}
+  }
+  const fut72=S.previsions.filter(p=>new Date(p.dt)>=now&&new Date(p.dt).getTime()-nowMs<=ms72);
+  const bestKey=fut72.length?fut72.reduce((a,b)=>b.energie>a.energie?b:a).dt:null;
+
+  const days=[];let cd=null;
+  for(const p of S.previsions){
+    if(!cd||cd.label!==p.label){cd={label:p.label,slots:[]};days.push(cd);}
+    cd.slots.push(p);
   }
 
-  const container=document.getElementById("cards");
-  container.innerHTML=days.map(day=>{
+  const P=S.previsions;
+  const R={day:[],time:[],vdir:[],vkmh:[],sdir:[],sh:[],sp:[],skj:[],wdir:[],wh:[],wp:[],marr:[],mhbm:[],mm:[]};
+
+  days.forEach((day,di)=>{
     const vj=verdictJour(day.slots);
-    const slotMap={};
-    for(const s of day.slots) slotMap[s.heure]=s;
-
-    function cs(h){
-      const s=slotMap[h];
-      if(!s)return`style="border-top:3px solid transparent"`;
-      if(s.dt===curKey) return`style="border-top:3px solid #2a7a5a"`;
-      if(s.dt===bestKey)return`style="border-top:3px solid #8a9a5a"`;
-      return`style="border-top:3px solid transparent"`;
-    }
-    function bdg(h){
-      const s=slotMap[h];
-      if(!s)return"";
-      if(s.dt===curKey) return'<span class="badge cur">◀</span>';
-      if(s.dt===bestKey)return'<span class="badge best">★</span>';
-      return"";
-    }
-
-    const hRow=CRENEAUX.map(h=>`<th ${cs(h)}>${String(h).padStart(2,"0")}h${bdg(h)}</th>`).join("");
-
-    const swellRow=CRENEAUX.map(h=>{
-      const s=slotMap[h];
-      if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${propArrow(s.sd,"#3a6a8a")}<span style="color:#3a6a8a;font-weight:${s.sh>=0.5?500:300}">${s.sh}m</span><span class="sub"> ${s.sp}s ${s.sd}</span></td>`;
-    }).join("");
-
-    const vagueRow=CRENEAUX.map(h=>{
-      const s=slotMap[h];
-      if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${propArrow(s.wd,hCol(s.wh))}<span style="color:${hCol(s.wh)};font-weight:${s.wh>=0.7?500:300}">${s.wh}m</span><span class="sub"> ${s.wp}s ${s.wd}</span></td>`;
-    }).join("");
-
-    const kjRow=CRENEAUX.map(h=>{
-      const s=slotMap[h];
-      if(!s)return`<td ${cs(h)}>—</td>`;
+    day.slots.forEach((s,si)=>{
+      const isFirst=si===0,isSep=isFirst&&di>0;
+      const sc=isSep?' sep':'';
+      const isNow=s.dt===curKey,isBest=s.dt===bestKey;
+      const tide=nextTide(S.marees,s.jour,s.mois,s.heure);
+      const tc=tide?(tide.type==='H'?'#2a5a8a':'#8a6a2a'):'#bbb';
       const ew=Math.min(s.energie/150*100,100);
-      return`<td ${cs(h)}><div style="display:flex;align-items:center;gap:3px"><div class="ebar"><div class="efill" style="width:${ew}%;background:${eCol(s.energie)}"></div></div><span style="color:${eCol(s.energie)};font-size:0.5rem">${s.energie}</span></div></td>`;
-    }).join("");
+      const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#8a6e2a">★</span>':'';
 
-    const ventRow=CRENEAUX.map(h=>{
-      const s=slotMap[h];
-      if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${propArrow(s.vdir,wCol(s.vent))}<span style="color:${wCol(s.vent)}">${s.vent}</span><span class="sub"> ${s.vdir}</span></td>`;
-    }).join("");
+      if(isFirst) R.day.push(
+        `<td class="dc day-cell${sc}${di===0?' today':''}" colspan="${day.slots.length}" style="color:${vj.c}">
+          ${day.label}&nbsp;<span style="font-size:7px;opacity:.6">${vj.v}</span>
+        </td>`);
 
-    const mareeRow=CRENEAUX.map(h=>{
-      const s=slotMap[h];
-      if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${fmtTide(nextTide(S.marees,s.jour,s.mois,s.heure))}</td>`;
-    }).join("");
+      R.time.push(`<td class="dc time-cell${sc}${isNow?' is-now':isBest?' is-best':''}">${String(s.heure).padStart(2,'0')}h${badge}</td>`);
+      R.vdir.push(`<td class="dc${sc}">${arr(s.vdir,wCol(s.vent))}</td>`);
+      R.vkmh.push(`<td class="dc${sc}"><span style="color:${wCol(s.vent)};font-weight:${s.vent>=25?600:300}">${s.vent}</span></td>`);
+      R.sdir.push(`<td class="dc${sc}">${arr(s.sd,sCol(s.sh))}</td>`);
+      R.sh.push(`<td class="dc${sc}"><span style="color:${sCol(s.sh)};font-weight:${s.sh>=0.5?600:300}">${s.sh}</span></td>`);
+      R.sp.push(`<td class="dc${sc}"><span style="color:var(--fnt)">${s.sp}</span></td>`);
+      R.skj.push(`<td class="dc${sc}"><div class="kj-bar"><div class="kj-fill" style="width:${ew}%;background:${eCol(s.energie)}"></div></div><span style="color:${eCol(s.energie)};font-size:9px">${s.energie}</span></td>`);
+      R.wdir.push(`<td class="dc${sc}">${arr(s.wd,hCol(s.wh))}</td>`);
+      R.wh.push(`<td class="dc${sc}"><span style="color:${hCol(s.wh)};font-weight:${s.wh>=0.7?600:300}">${s.wh}</span></td>`);
+      R.wp.push(`<td class="dc${sc}"><span style="color:var(--fnt)">${s.wp}</span></td>`);
+      R.marr.push(`<td class="dc${sc}"><span style="color:${tc};font-size:14px">${tide?(tide.type==='H'?'↑':'↓'):'—'}</span></td>`);
+      R.mhbm.push(`<td class="dc${sc}"><span style="color:${tc};font-size:9px">${tide?(tide.type==='H'?'HM':'BM')+' '+tHStr(tide):'—'}</span></td>`);
+      R.mm.push(`<td class="dc${sc}"><span style="color:${tc}">${tide?tide.m.toFixed(2)+'m':'—'}</span></td>`);
+    });
+  });
 
-    return`<div class="card">
-  <div class="card-header">
-    <span class="card-day">${day.label}</span>
-    <span class="card-verdict" style="color:${vj.c}">${vj.v}</span>
-  </div>
-  <div class="card-scroll">
-    <table class="day-table">
-      <thead><tr><th class="row-label"></th>${hRow}</tr></thead>
-      <tbody>
-        <tr><td class="row-label sub">Swell</td>${swellRow}</tr>
-        <tr><td class="row-label sub">kJ</td>${kjRow}</tr>
-        <tr><td class="row-label sub">Vague</td>${vagueRow}</tr>
-        <tr><td class="row-label sub">Vent</td>${ventRow}</tr>
-        <tr><td class="row-label sub">Marée</td>${mareeRow}</tr>
-      </tbody>
-    </table>
-  </div>
-</div>`;
-  }).join("");
+  const sect=(lbl)=>`<tr class="r-sect">
+    <td class="lbl sect">${lbl}</td>
+    ${P.map((p,i)=>{const f=i===0||P[i-1].label!==p.label,s=f&&i>0;return`<td class="dc${s?' sep':''}"></td>`;}).join('')}
+  </tr>`;
 
-  document.getElementById("foot").textContent="Open-Meteo · "+S.updated+" · Swell=houle longue distance · kJ=énergie swell · ◀=maintenant · ★=meilleure 72h";
+  document.getElementById('tbl').innerHTML=`
+    <colgroup>
+      <col style="width:var(--lw)">
+      ${P.map(()=>`<col style="width:var(--cw)">`).join('')}
+    </colgroup>
+    <tbody>
+      <tr class="r-day"> <td class="lbl sect"></td>${R.day.join('')}</tr>
+      <tr class="r-time"><td class="lbl">h</td>${R.time.join('')}</tr>
+      ${sect('Vent km/h')}
+      <tr class="r-vdir"><td class="lbl">dir</td>${R.vdir.join('')}</tr>
+      <tr class="r-vkmh"><td class="lbl">km/h</td>${R.vkmh.join('')}</tr>
+      ${sect('Swell')}
+      <tr class="r-sdir"><td class="lbl">dir</td>${R.sdir.join('')}</tr>
+      <tr class="r-sh">  <td class="lbl">m</td>${R.sh.join('')}</tr>
+      <tr class="r-sp">  <td class="lbl">s</td>${R.sp.join('')}</tr>
+      <tr class="r-skj"> <td class="lbl">kJ</td>${R.skj.join('')}</tr>
+      ${sect('Vague')}
+      <tr class="r-wdir"><td class="lbl">dir</td>${R.wdir.join('')}</tr>
+      <tr class="r-wh">  <td class="lbl">m</td>${R.wh.join('')}</tr>
+      <tr class="r-wp">  <td class="lbl">s</td>${R.wp.join('')}</tr>
+      ${sect('Marée m')}
+      <tr class="r-marr"><td class="lbl">↑↓</td>${R.marr.join('')}</tr>
+      <tr class="r-mhbm"><td class="lbl">HM/BM</td>${R.mhbm.join('')}</tr>
+      <tr class="r-mm">  <td class="lbl">m</td>${R.mm.join('')}</tr>
+    </tbody>`;
+
+  document.getElementById('foot').textContent=
+    'Open-Meteo · '+S.updated+' · Swell=houle longue distance · kJ=énergie swell · ◀=maintenant · ★=meilleure 72h';
+
+  if(curKey){
+    const idx=P.findIndex(p=>p.dt===curKey);
+    if(idx>=0) setTimeout(()=>{document.querySelector('.wrap').scrollLeft=Math.max(0,idx*52-52);},80);
+  }
 }
 
-document.addEventListener("DOMContentLoaded",render);
+document.addEventListener('DOMContentLoaded',render);
 """
 
-CSS = """
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#f5f3f0;color:#2a2a2a;font-family:'IBM Plex Mono',monospace;min-height:100vh}
-.header{padding:0.9rem 1.2rem;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
-.title-row{display:flex;align-items:baseline;gap:0.8rem}
-.title{font-size:0.82rem;letter-spacing:4px;color:#555;text-transform:uppercase;font-weight:300}
-.verdict{font-size:1.3rem;letter-spacing:3px;font-weight:300}
-.updated{font-size:0.44rem;color:#bbb;letter-spacing:1px;margin-top:2px}
-.btn{background:transparent;border:1px solid #ccc;color:#666;padding:0.3rem 0.7rem;font-family:inherit;font-size:0.52rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
-.btn:hover{border-color:#999;color:#333}
-.alerts{padding:0.45rem 1.2rem;border-bottom:1px solid #ddd;font-size:0.54rem;color:#b07a3a}
-#cards{padding:0.6rem 0.8rem;display:flex;flex-direction:column;gap:0.8rem}
-.card{border:1px solid #e0ddd8;background:#fff;border-radius:2px}
-.card-header{display:flex;align-items:baseline;gap:0.6rem;padding:0.4rem 0.7rem;border-bottom:1px solid #eae7e2}
-.card-day{font-size:0.72rem;letter-spacing:2px;color:#555;font-weight:400;text-transform:uppercase}
-.card-verdict{font-size:0.62rem;letter-spacing:2px;font-weight:300}
-.card-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.day-table{border-collapse:collapse;font-size:0.7rem;white-space:nowrap;min-width:360px;width:100%}
-.day-table th{padding:0.3rem 0.6rem;color:#999;font-weight:400;font-size:0.62rem;letter-spacing:1px;text-align:left;border-bottom:1px solid #eae7e2}
-.day-table td{padding:0.35rem 0.6rem;border-bottom:1px solid #f0ede8;vertical-align:middle}
-.row-label{color:#bbb;font-size:0.54rem;letter-spacing:1px;font-weight:300;white-space:nowrap;padding-right:0.4rem;min-width:40px}
-.sub{color:#999;font-size:0.56rem}
-.badge{font-size:0.6rem;margin-left:3px}
-.badge.cur{color:#2a7a5a}
-.badge.best{color:#8a9a5a}
-.ebar{width:28px;height:2px;background:#e0ddd8;position:relative;display:inline-block;vertical-align:middle}
-.efill{position:absolute;left:0;top:0;height:100%}
-.foot{padding:0.5rem 1.2rem;font-size:0.42rem;color:#bbb;border-top:1px solid #e0ddd8;font-style:italic}
-"""
 
+# ─── Generate HTML ────────────────────────────────────────────────────────────
 def generate_html(surf):
     data_json = json.dumps(surf, ensure_ascii=False)
     return (
@@ -376,25 +373,27 @@ def generate_html(surf):
         '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta http-equiv="refresh" content="3600">'
         '<title>Port-Louis · Surf</title>'
-        '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">'
-        f'<style>{CSS}</style></head><body>'
+        '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">'
+        f'<style>{CSS}</style>'
+        '</head><body>'
         f'<script>window.SURF_DATA={data_json};</script>'
-        '<div class="header">'
-        '<div>'
-        '<div class="title-row">'
-        '<div class="title">Port-Louis · Surf</div>'
-        '<div class="verdict" id="verdict"></div>'
+        '<div class="hdr">'
+          '<div>'
+            '<div class="hdr-l">'
+              '<span class="site">Port-Louis · Surf</span>'
+              '<span id="verdict">—</span>'
+            '</div>'
+            '<div id="upd">chargement…</div>'
+          '</div>'
+          '<button class="btn" onclick="location.reload()">↺ Actualiser</button>'
         '</div>'
-        '<div class="updated" id="updated"></div>'
-        '</div>'
-        '<button class="btn" onclick="location.reload()">↺ Actualiser</button>'
-        '</div>'
-        '<div class="alerts" id="alerts" style="display:none"></div>'
-        '<div id="cards"></div>'
+        '<div class="alerts" id="alerts"></div>'
+        '<div class="wrap"><table class="tbl" id="tbl"></table></div>'
         '<div class="foot" id="foot"></div>'
         f'<script>{JS}</script>'
         '</body></html>'
     )
+
 
 def main():
     om, ow = fetch_all()
