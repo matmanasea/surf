@@ -1,6 +1,8 @@
 name: Surf Dashboard
 
 on:
+  permissions:
+    contents: write
   schedule:
     - cron: '0 * * * *'   # toutes les heures
   workflow_dispatch:          # bouton manuel sur GitHub
