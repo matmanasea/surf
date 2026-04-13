@@ -160,7 +160,16 @@ def debug(surf):
 
 # ─── JS ───────────────────────────────────────────────────────────────────────
 JS = r"""
-const DIR={N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘"};
+const DIR={
+  N:"↑",NNE:"↗",NE:"↗",ENE:"→",E:"→",ESE:"→",SE:"↘",SSE:"↓",
+  S:"↓",SSW:"↓",SW:"↙",WSW:"←",W:"←",WNW:"←",NW:"↖",NNW:"↑"
+};
+
+// Flèches de propagation (opposé provenance)
+const PROP={
+  N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",
+  S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘"
+};
 const hCol=h=>h>=0.8?"#2a7a5a":h>=0.5?"#4a6a5a":"#aaa";
 const wCol=v=>v>=30?"#aa4a4a":v>=25?"#8a6a2a":"#2a6a5a";
 const eCol=e=>e>=80?"#2a6a4a":e>=40?"#5a7a4a":"#bbb";
@@ -186,16 +195,18 @@ function tideCell(marees,jour,heure){
     else if(!next)next=m;
   }
   function fmt(m){
-    if(!m)return"—";
+    if(!m)return"";
     const h=Math.floor(m.h),min=Math.round((m.h-h)*60);
     const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
     const col=m.type==="H"?"#2a5a8a":"#7a5a2a";
     const label=m.type==="H"?"HM":"BM";
     return`<span style="color:${col}">${label} ${hStr} <span style="opacity:.7">${m.m.toFixed(2)}m</span></span>`;
   }
-  const arrow=next&&next.type==="H"?"↑":"↓";
-  const col=next&&next.type==="H"?"#2a5a8a":"#7a5a2a";
-  return`${fmt(prev)} <span style="color:${col}">${arrow}</span> ${fmt(next)}`;
+  // prev = dernier extrême passé, next = prochain extrême
+  // flèche = sens vers next
+  const arrow=next?(next.type==="H"?"↑":"↓"):"";
+  const arrowCol=next?(next.type==="H"?"#2a5a8a":"#7a5a2a"):"#999";
+  return`${fmt(prev)} <span style="color:${arrowCol}">${arrow}</span> ${fmt(next)}`;
 }
 
 function render(){
@@ -229,12 +240,12 @@ function render(){
     return`<tr style="background:${bg};border-left:${bl}">
 <td style="color:${isCurrent?"#2a7a5a":isBest?"#6a7a3a":"#777"};white-space:nowrap;font-size:0.58rem;font-weight:${isCurrent||isBest?500:300}">${r.moment}${isCurrent?' ◀':''}</td>
 <td style="white-space:nowrap">
-  <span style="color:${hCol(r.wh)};font-size:12px">${DIR[r.wd]||"•"}</span>
+  <span style="color:${hCol(r.wh)};font-size:12px">${PROP[r.wd]||"•"}</span>
   <span style="color:${hCol(r.wh)};font-weight:${r.wh>=0.7?500:300}"> ${r.wh}m</span>
   <span style="color:#999;font-size:0.52rem"> ${r.wp}s ${r.wd}</span>
 </td>
 <td style="white-space:nowrap;color:#3a6a8a">
-  <span style="font-size:12px">${DIR[r.sd]||"•"}</span>
+  <span style="font-size:12px">${PROP[r.sd]||"•"}</span>
   <span style="font-weight:${r.sh>=0.5?500:300}"> ${r.sh}m</span>
   <span style="font-size:0.52rem;color:#999"> ${r.sp}s ${r.sd}</span>
 </td>
@@ -251,7 +262,6 @@ function render(){
   <span style="color:${wCol(r.vent)}"> ${r.vent}</span>
   <span style="color:#999;font-size:0.52rem"> ${r.vdir}</span>
 </td>
-<td style="font-size:0.52rem;color:${vCol(r.vtype)};text-align:center">${vIcon(r.vtype)} ${r.vtype}</td>
 <td style="font-size:0.52rem;white-space:nowrap">${tide}</td>
 </tr>`;
   }).join("");
@@ -304,7 +314,7 @@ def generate_html(surf):
         '<div class="table-wrap"><table>'
         '<thead><tr>'
         '<th>Créneau</th><th>Vague</th><th>Swell</th>'
-        '<th>kJ</th><th>Vent</th><th>Conditions</th><th>Marée</th>'
+        '<th>kJ</th><th>Vent</th><th>Marée</th>'
         '</tr></thead>'
         '<tbody id="tbody"></tbody></table></div>'
         '<div class="foot" id="foot"></div>'
