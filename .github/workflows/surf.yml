@@ -2,7 +2,7 @@ name: Surf Dashboard
 
 on:
   schedule:
-    - cron: '0 6,12,18 * * *'
+    - cron: '0 10,13,16,19,22,1 * * *'
   workflow_dispatch:
 
 permissions:
