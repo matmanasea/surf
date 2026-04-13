@@ -25,7 +25,7 @@ jobs:
 
       - name: Generate dashboard
         run: |
-          python3 surf_portlouis.py
+          python3 surf_antilles.py
           touch docs/.nojekyll
 
       - name: Commit & push
