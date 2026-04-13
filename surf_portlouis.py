@@ -46,17 +46,31 @@ def fetch_all():
 def detect_marees(times, levels):
     marees = []
     n = len(levels)
-    W = 3  # fenêtre de comparaison en heures
-    for i in range(W, n - W):
-        if any(levels[j] is None for j in range(i-W, i+W+1)):
+    i = 1
+    while i < n - 1:
+        if levels[i] is None:
+            i += 1
             continue
-        t_ast = utc_to_ast(datetime.fromisoformat(times[i]))
-        h_dec = round(t_ast.hour + t_ast.minute / 60, 2)
-        window = [levels[j] for j in range(i-W, i+W+1)]
-        if levels[i] == max(window) and levels[i] > levels[i-1]:
-            marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
-        elif levels[i] == min(window) and levels[i] < levels[i-1]:
-            marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
+        # Chercher la fin d'un plateau éventuel
+        j = i
+        while j < n - 1 and levels[j] == levels[i]:
+            j += 1
+        if j >= n - 1:
+            break
+        prev_val = levels[i - 1]
+        next_val = levels[j]
+        mid_idx  = i  # premier point du plateau
+        if prev_val is not None and next_val is not None:
+            if levels[i] > prev_val and levels[i] >= next_val:
+                t_ast = utc_to_ast(datetime.fromisoformat(times[mid_idx]))
+                h_dec = round(t_ast.hour + t_ast.minute / 60, 2)
+                marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
+            elif levels[i] < prev_val and levels[i] <= next_val:
+                t_ast = utc_to_ast(datetime.fromisoformat(times[mid_idx]))
+                h_dec = round(t_ast.hour + t_ast.minute / 60, 2)
+                marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
+        i = j
+
     print(f"Marées détectées: {len(marees)}")
     for m in marees[:8]:
         print(f"  Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
@@ -160,16 +174,12 @@ def debug(surf):
 
 # ─── JS ───────────────────────────────────────────────────────────────────────
 JS = r"""
-const DIR={
-  N:"↑",NNE:"↗",NE:"↗",ENE:"→",E:"→",ESE:"→",SE:"↘",SSE:"↓",
-  S:"↓",SSW:"↓",SW:"↙",WSW:"←",W:"←",WNW:"←",NW:"↖",NNW:"↑"
-};
-
-// Flèches de propagation (opposé provenance)
-const PROP={
-  N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",
-  S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘"
-};
+// Degrés de propagation = provenance + 180
+const PROP_DEG={N:180,NNE:202,NE:225,ENE:247,E:270,ESE:292,SE:315,SSE:337,S:0,SSW:22,SW:45,WSW:67,W:90,WNW:112,NW:135,NNW:157};
+function propArrow(dir,col,size){
+  const d=PROP_DEG[dir]||0;
+  return`<span style="display:inline-block;transform:rotate(${d}deg);color:${col};font-size:${size||12}px;line-height:1">↑</span>`;
+}
 const hCol=h=>h>=0.8?"#2a7a5a":h>=0.5?"#4a6a5a":"#aaa";
 const wCol=v=>v>=30?"#aa4a4a":v>=25?"#8a6a2a":"#2a6a5a";
 const eCol=e=>e>=80?"#2a6a4a":e>=40?"#5a7a4a":"#bbb";
@@ -200,7 +210,7 @@ function tideCell(marees,jour,heure){
     const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
     const col=m.type==="H"?"#2a5a8a":"#7a5a2a";
     const label=m.type==="H"?"HM":"BM";
-    return`<span style="color:${col}">${label} ${hStr} <span style="opacity:.7">${m.m.toFixed(2)}m</span></span>`;
+    return`<span style="color:${col}">${label} ${hStr} ${m.m.toFixed(2)}m</span>`;
   }
   // prev = dernier extrême passé, next = prochain extrême
   // flèche = sens vers next
@@ -240,12 +250,12 @@ function render(){
     return`<tr style="background:${bg};border-left:${bl}">
 <td style="color:${isCurrent?"#2a7a5a":isBest?"#6a7a3a":"#777"};white-space:nowrap;font-size:0.58rem;font-weight:${isCurrent||isBest?500:300}">${r.moment}${isCurrent?' ◀':''}</td>
 <td style="white-space:nowrap">
-  <span style="color:${hCol(r.wh)};font-size:12px">${PROP[r.wd]||"•"}</span>
+  ${propArrow(r.wd,hCol(r.wh))}
   <span style="color:${hCol(r.wh)};font-weight:${r.wh>=0.7?500:300}"> ${r.wh}m</span>
   <span style="color:#999;font-size:0.52rem"> ${r.wp}s ${r.wd}</span>
 </td>
 <td style="white-space:nowrap;color:#3a6a8a">
-  <span style="font-size:12px">${PROP[r.sd]||"•"}</span>
+  ${propArrow(r.sd,"#3a6a8a")}
   <span style="font-weight:${r.sh>=0.5?500:300}"> ${r.sh}m</span>
   <span style="font-size:0.52rem;color:#999"> ${r.sp}s ${r.sd}</span>
 </td>
@@ -258,7 +268,7 @@ function render(){
   </div>
 </td>
 <td style="white-space:nowrap">
-  <span style="font-size:12px;color:${wCol(r.vent)}">${DIR[r.vdir]||"•"}</span>
+  ${propArrow(r.vdir,wCol(r.vent))}
   <span style="color:${wCol(r.vent)}"> ${r.vent}</span>
   <span style="color:#999;font-size:0.52rem"> ${r.vdir}</span>
 </td>
