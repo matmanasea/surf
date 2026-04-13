@@ -45,30 +45,35 @@ def fetch_open_meteo():
 # ─── Stormglass marées ────────────────────────────────────────────────────────
 def fetch_marees():
     print("Fetching marées Stormglass...")
-    now = datetime.now(timezone.utc)
-    r = requests.get("https://api.stormglass.io/v2/tide/extremes/point", params={
-        "lat": LAT, "lng": LNG,
-        "start": int(now.timestamp()),
-        "end":   int((now + timedelta(days=10)).timestamp()),
-    }, headers={"Authorization": SG_KEY}, timeout=15)
-    r.raise_for_status()
-    data = r.json()
-    print(f"OK — {len(data.get('data', []))} points marées")
+    try:
+        now = datetime.now(timezone.utc)
+        r = requests.get("https://api.stormglass.io/v2/tide/extremes/point", params={
+            "lat": LAT, "lng": LNG,
+            "start": int(now.timestamp()),
+            "end":   int((now + timedelta(days=10)).timestamp()),
+        }, headers={"Authorization": SG_KEY}, timeout=15)
+        r.raise_for_status()
+        data = r.json()
+        print(f"OK — {len(data.get('data', []))} points marées")
 
-    marees = []
-    for m in data.get("data", []):
-        t_ast = utc_to_ast(datetime.fromisoformat(m["time"].replace("Z", "+00:00")))
-        marees.append({
-            "jour": t_ast.day,
-            "h":    round(t_ast.hour + t_ast.minute / 60, 2),
-            "m":    round(m["height"], 2),
-            "type": "H" if m["type"] == "high" else "L",
-        })
+        marees = []
+        for m in data.get("data", []):
+            t_ast = utc_to_ast(datetime.fromisoformat(m["time"].replace("Z", "+00:00")))
+            marees.append({
+                "jour": t_ast.day,
+                "h":    round(t_ast.hour + t_ast.minute / 60, 2),
+                "m":    round(m["height"], 2),
+                "type": "H" if m["type"] == "high" else "L",
+            })
 
-    print("  Marées (AST):")
-    for m in marees[:4]:
-        print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
-    return marees
+        print("  Marées (AST):")
+        for m in marees[:6]:
+            print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
+        return marees
+
+    except Exception as e:
+        print(f"  ⚠ Marées indisponibles: {e}")
+        return []
 
 
 # ─── Process ──────────────────────────────────────────────────────────────────
