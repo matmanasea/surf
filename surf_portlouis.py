@@ -46,17 +46,19 @@ def fetch_all():
 def detect_marees(times, levels):
     marees = []
     n = len(levels)
-    for i in range(1, n - 1):
-        if levels[i] is None or levels[i-1] is None or levels[i+1] is None:
+    W = 3  # fenêtre de comparaison en heures
+    for i in range(W, n - W):
+        if any(levels[j] is None for j in range(i-W, i+W+1)):
             continue
         t_ast = utc_to_ast(datetime.fromisoformat(times[i]))
         h_dec = round(t_ast.hour + t_ast.minute / 60, 2)
-        if levels[i] > levels[i-1] and levels[i] > levels[i+1]:
+        window = [levels[j] for j in range(i-W, i+W+1)]
+        if levels[i] == max(window) and levels[i] > levels[i-1]:
             marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "H"})
-        elif levels[i] < levels[i-1] and levels[i] < levels[i+1]:
+        elif levels[i] == min(window) and levels[i] < levels[i-1]:
             marees.append({"jour": t_ast.day, "h": h_dec, "m": round(levels[i], 2), "type": "L"})
     print(f"Marées détectées: {len(marees)}")
-    for m in marees[:6]:
+    for m in marees[:8]:
         print(f"  Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
     return marees
 
@@ -143,11 +145,15 @@ def debug(surf):
     print(f"{'Créneau':<14} {'Vague':>6} {'Pér':>5} {'DirV':>5} {'Swell':>6} {'Pér':>5} {'DirS':>5} {'kJ':>5} {'Vent':>6} {'VDir':>5} {'Type':<12} {'Marée'}")
     print(f"{'─'*90}")
     for p in surf["previsions"][:18]:
-        m_info = ""
-        for m in surf["marees"]:
-            if m["jour"] == p["jour"] and abs(m["h"] - p["heure"]) < 3:
-                m_info = f"{'HM' if m['type']=='H' else 'BM'} {m['m']}m"
-                break
+        t = p["jour"] * 24 + p["heure"]
+        sorted_m = sorted(surf["marees"], key=lambda m: m["jour"]*24 + m["h"])
+        prev_m, next_m = None, None
+        for m in sorted_m:
+            if m["jour"]*24 + m["h"] <= t: prev_m = m
+            elif not next_m: next_m = m
+        ref = next_m or prev_m
+        up = next_m and next_m["type"] == "H"
+        m_info = f"{'↑' if up else '↓'} {'HM' if ref['type']=='H' else 'BM'} {ref['h']:.2f}h {ref['m']}m" if ref else ""
         print(f"  {p['moment']:<12} {p['wh']:>5}m {p['wp']:>4}s {p['wd']:>5} {p['sh']:>5}m {p['sp']:>4}s {p['sd']:>5} {p['energie']:>5} {p['vent']:>5}km {p['vdir']:>5} {p['vtype']:<12} {m_info}")
     print(f"{'='*90}\n")
 
@@ -179,15 +185,17 @@ function tideCell(marees,jour,heure){
     if(m.jour*24+m.h<=t)prev=m;
     else if(!next)next=m;
   }
-  if(!prev&&!next)return"—";
-  const up=next&&next.type==="H";
-  const ref=next||prev;
-  const h=Math.floor(ref.h),min=Math.round((ref.h-h)*60);
-  const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
-  const col=ref.type==="H"?"#2a5a8a":"#7a5a2a";
-  const arrow=up?"↑":"↓";
-  const label=ref.type==="H"?"HM":"BM";
-  return`<span style="color:${col}">${arrow} ${label} ${hStr} <span style="opacity:.7">${ref.m.toFixed(2)}m</span></span>`;
+  function fmt(m){
+    if(!m)return"—";
+    const h=Math.floor(m.h),min=Math.round((m.h-h)*60);
+    const hStr=String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
+    const col=m.type==="H"?"#2a5a8a":"#7a5a2a";
+    const label=m.type==="H"?"HM":"BM";
+    return`<span style="color:${col}">${label} ${hStr} <span style="opacity:.7">${m.m.toFixed(2)}m</span></span>`;
+  }
+  const arrow=next&&next.type==="H"?"↑":"↓";
+  const col=next&&next.type==="H"?"#2a5a8a":"#7a5a2a";
+  return`${fmt(prev)} <span style="color:${col}">${arrow}</span> ${fmt(next)}`;
 }
 
 function render(){
@@ -223,12 +231,12 @@ function render(){
 <td style="white-space:nowrap">
   <span style="color:${hCol(r.wh)};font-size:12px">${DIR[r.wd]||"•"}</span>
   <span style="color:${hCol(r.wh)};font-weight:${r.wh>=0.7?500:300}"> ${r.wh}m</span>
-  <span style="color:#999;font-size:0.52rem"> ${r.wp}s</span>
+  <span style="color:#999;font-size:0.52rem"> ${r.wp}s ${r.wd}</span>
 </td>
 <td style="white-space:nowrap;color:#3a6a8a">
   <span style="font-size:12px">${DIR[r.sd]||"•"}</span>
   <span style="font-weight:${r.sh>=0.5?500:300}"> ${r.sh}m</span>
-  <span style="font-size:0.52rem;color:#999"> ${r.sp}s</span>
+  <span style="font-size:0.52rem;color:#999"> ${r.sp}s ${r.sd}</span>
 </td>
 <td>
   <div style="display:flex;align-items:center;gap:3px">
