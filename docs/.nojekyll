@@ -1,6 +1,1 @@
-name: Generate dashboard
-        env:
-          SG_KEY: ${{ secrets.SG_KEY }}
-        run: |
-          python3 surf_portlouis.py
-          touch docs/.nojekyll
+
