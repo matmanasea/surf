@@ -4,7 +4,7 @@ body { background:#f5f3f0; color:#2a2a2a; font-family:'IBM Plex Mono',monospace;
 .header { padding:1.4rem 1.4rem 0; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:flex-start; }
 .title { font-size:0.95rem; letter-spacing:6px; color:#555; text-transform:uppercase; font-weight:300; }
 .coords { font-size:0.54rem; color:#aaa; letter-spacing:2px; margin-top:0.2rem; padding-bottom:1rem; }
-.btn { background:transparent; border:1px solid #ccc; color:#666; padding:0.4rem 0.9rem; font-family:inherit; font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:border-color 0.2s,color 0.2s; }
+.btn { background:transparent; border:1px solid #ccc; color:#666; padding:0.4rem 0.9rem; font-family:inherit; font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
 .btn:hover { border-color:#999; color:#333; }
 .vbox { padding:1.2rem 1.4rem; border-bottom:1px solid #ddd; }
 .verdict { font-size:1.8rem; letter-spacing:7px; font-weight:300; margin-bottom:0.2rem; }
@@ -17,52 +17,41 @@ body { background:#f5f3f0; color:#2a2a2a; font-family:'IBM Plex Mono',monospace;
 .alerts { padding:0.6rem 1.4rem; border-bottom:1px solid #ddd; font-size:0.6rem; color:#b07a3a; }
 .legend { padding:0.35rem 1.4rem; font-size:0.48rem; color:#bbb; border-bottom:1px solid #e0ddd8; display:flex; gap:1rem; }
 .table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-size:0.62rem; min-width:480px; }
+table { width:100%; border-collapse:collapse; font-size:0.62rem; min-width:560px; }
 th { padding:0.28rem 0.5rem; color:#bbb; font-weight:300; font-size:0.48rem; letter-spacing:1px; text-align:left; border-bottom:1px solid #e0ddd8; }
 td { padding:0.32rem 0.5rem; border-bottom:1px solid #eae7e2; vertical-align:middle; }
-.foot { padding:0.8rem 1.4rem; font-size:0.46rem; color:#ccc; border-top:1px solid #e0ddd8; }
-</style></head><body><script>window.SURF_DATA={"updated": "Mon 13 Apr 2026 10h44", "tempEau": 27.0, "alertes": [], "bestSession": {"jour": 13, "heure": 8}, "marees": [{"jour": 13, "h": 7.48, "m": 0.04, "type": "L"}, {"jour": 13, "h": 12.93, "m": 0.15, "type": "H"}, {"jour": 13, "h": 19.7, "m": -0.05, "type": "L"}, {"jour": 14, "h": 2.15, "m": 0.16, "type": "H"}, {"jour": 14, "h": 8.12, "m": -0.01, "type": "L"}, {"jour": 14, "h": 13.95, "m": 0.17, "type": "H"}, {"jour": 14, "h": 20.2, "m": -0.03, "type": "L"}, {"jour": 15, "h": 2.37, "m": 0.19, "type": "H"}, {"jour": 15, "h": 8.75, "m": -0.06, "type": "L"}, {"jour": 15, "h": 14.85, "m": 0.19, "type": "H"}, {"jour": 15, "h": 20.72, "m": -0.01, "type": "L"}, {"jour": 16, "h": 2.7, "m": 0.21, "type": "H"}, {"jour": 16, "h": 9.38, "m": -0.12, "type": "L"}, {"jour": 16, "h": 15.73, "m": 0.19, "type": "H"}, {"jour": 16, "h": 21.23, "m": 0.0, "type": "L"}, {"jour": 17, "h": 3.12, "m": 0.23, "type": "H"}, {"jour": 17, "h": 10.07, "m": -0.17, "type": "L"}, {"jour": 17, "h": 16.62, "m": 0.18, "type": "H"}, {"jour": 17, "h": 21.77, "m": 0.02, "type": "L"}, {"jour": 18, "h": 3.62, "m": 0.25, "type": "H"}, {"jour": 18, "h": 10.8, "m": -0.21, "type": "L"}, {"jour": 18, "h": 17.53, "m": 0.16, "type": "H"}, {"jour": 18, "h": 22.32, "m": 0.04, "type": "L"}, {"jour": 19, "h": 4.17, "m": 0.25, "type": "H"}, {"jour": 19, "h": 11.58, "m": -0.23, "type": "L"}, {"jour": 19, "h": 18.52, "m": 0.14, "type": "H"}, {"jour": 19, "h": 22.87, "m": 0.05, "type": "L"}, {"jour": 20, "h": 4.8, "m": 0.25, "type": "H"}, {"jour": 20, "h": 12.45, "m": -0.23, "type": "L"}, {"jour": 20, "h": 19.65, "m": 0.11, "type": "H"}, {"jour": 20, "h": 23.43, "m": 0.06, "type": "L"}, {"jour": 21, "h": 5.48, "m": 0.23, "type": "H"}, {"jour": 21, "h": 13.43, "m": -0.21, "type": "L"}, {"jour": 21, "h": 21.1, "m": 0.09, "type": "H"}, {"jour": 22, "h": 0.02, "m": 0.07, "type": "L"}, {"jour": 22, "h": 6.3, "m": 0.21, "type": "H"}, {"jour": 22, "h": 14.58, "m": -0.18, "type": "L"}, {"jour": 22, "h": 23.07, "m": 0.09, "type": "H"}, {"jour": 23, "h": 0.87, "m": 0.09, "type": "L"}], "previsions": [{"moment": "Lun 13 08h", "jour": 13, "heure": 8, "houle": 1.4, "periode": 6.0, "dir": "ENE", "energie": 53, "vent": 20, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.04}, {"moment": "Lun 13 11h", "jour": 13, "heure": 11, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 49, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.14}, {"moment": "Lun 13 14h", "jour": 13, "heure": 14, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 47, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.25}, {"moment": "Lun 13 17h", "jour": 13, "heure": 17, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 45, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.24}, {"moment": "Lun 13 20h", "jour": 13, "heure": 20, "houle": 1.3, "periode": 6.0, "dir": "ENE", "energie": 45, "vent": 17, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.15}, {"moment": "Mar 14 02h", "jour": 14, "heure": 2, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 39, "vent": 19, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.09}, {"moment": "Mar 14 08h", "jour": 14, "heure": 8, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 37, "vent": 18, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.09}, {"moment": "Mar 14 11h", "jour": 14, "heure": 11, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 37, "vent": 19, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.23}, {"moment": "Mar 14 14h", "jour": 14, "heure": 14, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 39, "vent": 13, "vdir": "SE", "vtype": "onshore", "note": 0, "tempEau": 27.33}, {"moment": "Mar 14 17h", "jour": 14, "heure": 17, "houle": 1.2, "periode": 6.0, "dir": "ENE", "energie": 41, "vent": 12, "vdir": "SSE", "vtype": "onshore", "note": 0, "tempEau": 27.27}, {"moment": "Mar 14 20h", "jour": 14, "heure": 20, "houle": 1.2, "periode": 6.0, "dir": "ENE", "energie": 43, "vent": 22, "vdir": "NNE", "vtype": "cross-offshore", "note": 0, "tempEau": 27.19}, {"moment": "Mer 15 02h", "jour": 15, "heure": 2, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 41, "vent": 19, "vdir": "SE", "vtype": "offshore", "note": 0, "tempEau": 27.1}, {"moment": "Mer 15 08h", "jour": 15, "heure": 8, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 39, "vent": 22, "vdir": "SE", "vtype": "offshore", "note": 0, "tempEau": 27.11}, {"moment": "Mer 15 11h", "jour": 15, "heure": 11, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 42, "vent": 16, "vdir": "NE", "vtype": "cross-offshore", "note": 0, "tempEau": 27.24}, {"moment": "Mer 15 14h", "jour": 15, "heure": 14, "houle": 1.3, "periode": 5.0, "dir": "NE", "energie": 45, "vent": 15, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.41}, {"moment": "Mer 15 17h", "jour": 15, "heure": 17, "houle": 1.3, "periode": 6.0, "dir": "NE", "energie": 47, "vent": 18, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.37}, {"moment": "Mer 15 20h", "jour": 15, "heure": 20, "houle": 1.3, "periode": 6.0, "dir": "NE", "energie": 51, "vent": 16, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.24}, {"moment": "Jeu 16 02h", "jour": 16, "heure": 2, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 51, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.15}, {"moment": "Jeu 16 08h", "jour": 16, "heure": 8, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 49, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.14}, {"moment": "Jeu 16 11h", "jour": 16, "heure": 11, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 48, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.24}, {"moment": "Jeu 16 14h", "jour": 16, "heure": 14, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 47, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.37}, {"moment": "Jeu 16 17h", "jour": 16, "heure": 17, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 50, "vent": 18, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.37}, {"moment": "Jeu 16 20h", "jour": 16, "heure": 20, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 49, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.26}, {"moment": "Ven 17 02h", "jour": 17, "heure": 2, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 46, "vent": 19, "vdir": "SE", "vtype": "offshore", "note": 0, "tempEau": 27.16}, {"moment": "Ven 17 08h", "jour": 17, "heure": 8, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 51, "vent": 17, "vdir": "SE", "vtype": "offshore", "note": 0, "tempEau": 27.1}, {"moment": "Ven 17 11h", "jour": 17, "heure": 11, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 52, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.15}, {"moment": "Ven 17 14h", "jour": 17, "heure": 14, "houle": 1.5, "periode": 5.0, "dir": "ENE", "energie": 57, "vent": 28, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.17}, {"moment": "Ven 17 17h", "jour": 17, "heure": 17, "houle": 1.5, "periode": 5.0, "dir": "ENE", "energie": 59, "vent": 28, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.13}, {"moment": "Ven 17 20h", "jour": 17, "heure": 20, "houle": 1.5, "periode": 5.0, "dir": "ENE", "energie": 61, "vent": 25, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.1}, {"moment": "Sam 18 02h", "jour": 18, "heure": 2, "houle": 1.5, "periode": 5.0, "dir": "ENE", "energie": 51, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.03}, {"moment": "Sam 18 08h", "jour": 18, "heure": 8, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 48, "vent": 26, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.04}, {"moment": "Sam 18 11h", "jour": 18, "heure": 11, "houle": 1.4, "periode": 5.0, "dir": "ENE", "energie": 44, "vent": 29, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.12}, {"moment": "Sam 18 14h", "jour": 18, "heure": 14, "houle": 1.3, "periode": 5.0, "dir": "ENE", "energie": 39, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.16}, {"moment": "Sam 18 17h", "jour": 18, "heure": 17, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 36, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.13}, {"moment": "Sam 18 20h", "jour": 18, "heure": 20, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 35, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.11}, {"moment": "Dim 19 02h", "jour": 19, "heure": 2, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 37, "vent": 24, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.03}, {"moment": "Dim 19 08h", "jour": 19, "heure": 8, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 35, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.01}, {"moment": "Dim 19 11h", "jour": 19, "heure": 11, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 33, "vent": 29, "vdir": "ESE", "vtype": "offshore", "note": 0, "tempEau": 27.1}, {"moment": "Dim 19 14h", "jour": 19, "heure": 14, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 31, "vent": 29, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.17}, {"moment": "Dim 19 17h", "jour": 19, "heure": 17, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 30, "vent": 29, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.14}, {"moment": "Dim 19 20h", "jour": 19, "heure": 20, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 29, "vent": 29, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.12}, {"moment": "Lun 20 02h", "jour": 20, "heure": 2, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 31, "vent": 29, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.05}, {"moment": "Lun 20 08h", "jour": 20, "heure": 8, "houle": 1.3, "periode": 4.0, "dir": "ENE", "energie": 37, "vent": 26, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.03}, {"moment": "Lun 20 11h", "jour": 20, "heure": 11, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 35, "vent": 27, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.12}, {"moment": "Lun 20 14h", "jour": 20, "heure": 14, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 31, "vent": 25, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": 27.18}, {"moment": "Lun 20 17h", "jour": 20, "heure": 17, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 28, "vent": 24, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.15}, {"moment": "Lun 20 20h", "jour": 20, "heure": 20, "houle": 1.0, "periode": 5.0, "dir": "ENE", "energie": 26, "vent": 29, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.13}, {"moment": "Mar 21 02h", "jour": 21, "heure": 2, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 28, "vent": 26, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.07}, {"moment": "Mar 21 08h", "jour": 21, "heure": 8, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 31, "vent": 26, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.07}, {"moment": "Mar 21 11h", "jour": 21, "heure": 11, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 33, "vent": 26, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.19}, {"moment": "Mar 21 14h", "jour": 21, "heure": 14, "houle": 1.2, "periode": 5.0, "dir": "ENE", "energie": 31, "vent": 26, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.25}, {"moment": "Mar 21 17h", "jour": 21, "heure": 17, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 29, "vent": 25, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": 27.2}, {"moment": "Mar 21 20h", "jour": 21, "heure": 20, "houle": 1.1, "periode": 5.0, "dir": "ENE", "energie": 27, "vent": 25, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 02h", "jour": 22, "heure": 2, "houle": 1.1, "periode": 7.0, "dir": "ENE", "energie": 46, "vent": 25, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 08h", "jour": 22, "heure": 8, "houle": 1.1, "periode": 7.0, "dir": "ENE", "energie": 41, "vent": 23, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 11h", "jour": 22, "heure": 11, "houle": 1.0, "periode": 7.0, "dir": "ENE", "energie": 40, "vent": 24, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 14h", "jour": 22, "heure": 14, "houle": 1.0, "periode": 7.0, "dir": "E", "energie": 37, "vent": 23, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 17h", "jour": 22, "heure": 17, "houle": 1.0, "periode": 7.0, "dir": "E", "energie": 35, "vent": 23, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Mer 22 20h", "jour": 22, "heure": 20, "houle": 1.0, "periode": 7.0, "dir": "E", "energie": 35, "vent": 24, "vdir": "ENE", "vtype": "offshore", "note": 0, "tempEau": null}, {"moment": "Jeu 23 02h", "jour": 23, "heure": 2, "houle": 1.0, "periode": 15.0, "dir": "NNE", "energie": 72, "vent": 22, "vdir": "E", "vtype": "offshore", "note": 0, "tempEau": null}]};</script><div class="header"><div><div class="title">Port-Louis · Surf</div><div class="coords">Grande-Terre · Guadeloupe · 16.43°N 61.54°W</div></div><button class="btn" onclick="location.reload()">↺ Actualiser</button></div><div class="vbox"><div class="verdict" id="verdict"></div><div class="phrase" id="phrase"></div><div class="now-label" id="now-label"></div><div class="ngrid" id="ngrid"></div></div><div class="alerts" id="alerts" style="display:none"></div><div class="legend"><span style="color:#4a6a5a">▶ meilleure session 72h</span><span style="color:#6a5a3a">★ note ≥ 2</span></div><div class="table-wrap"><table><thead><tr><th></th><th>Créneau</th><th>Houle</th><th>Pér.</th><th>Énergie</th><th>Vent</th><th>Marée</th></tr></thead><tbody id="tbody"></tbody></table></div><div class="foot" id="foot"></div><script>
-// ── Palette fond clair ────────────────────────────────────────────────────────
+.foot { padding:0.8rem 1.4rem; font-size:0.44rem; color:#bbb; border-top:1px solid #e0ddd8; font-style:italic; }
+</style></head><body><script>window.SURF_DATA={"updated": "Mon 13 Apr 2026 11h25", "tempEau": 26.5, "alertes": [], "bestSession": {"jour": 13, "heure": 2}, "marees": [{"jour": 13, "h": 7.48, "m": 0.04, "type": "L"}, {"jour": 13, "h": 12.93, "m": 0.15, "type": "H"}, {"jour": 13, "h": 19.7, "m": -0.05, "type": "L"}, {"jour": 14, "h": 2.15, "m": 0.16, "type": "H"}, {"jour": 14, "h": 8.12, "m": -0.01, "type": "L"}, {"jour": 14, "h": 13.95, "m": 0.17, "type": "H"}, {"jour": 14, "h": 20.2, "m": -0.03, "type": "L"}, {"jour": 15, "h": 2.37, "m": 0.19, "type": "H"}, {"jour": 15, "h": 8.75, "m": -0.06, "type": "L"}, {"jour": 15, "h": 14.85, "m": 0.19, "type": "H"}, {"jour": 15, "h": 20.72, "m": -0.01, "type": "L"}, {"jour": 16, "h": 2.7, "m": 0.21, "type": "H"}, {"jour": 16, "h": 9.38, "m": -0.12, "type": "L"}, {"jour": 16, "h": 15.73, "m": 0.19, "type": "H"}, {"jour": 16, "h": 21.23, "m": 0.0, "type": "L"}, {"jour": 17, "h": 3.12, "m": 0.23, "type": "H"}, {"jour": 17, "h": 10.07, "m": -0.17, "type": "L"}, {"jour": 17, "h": 16.62, "m": 0.18, "type": "H"}, {"jour": 17, "h": 21.77, "m": 0.02, "type": "L"}, {"jour": 18, "h": 3.62, "m": 0.25, "type": "H"}, {"jour": 18, "h": 10.8, "m": -0.21, "type": "L"}, {"jour": 18, "h": 17.53, "m": 0.16, "type": "H"}, {"jour": 18, "h": 22.32, "m": 0.04, "type": "L"}, {"jour": 19, "h": 4.17, "m": 0.25, "type": "H"}, {"jour": 19, "h": 11.58, "m": -0.23, "type": "L"}, {"jour": 19, "h": 18.52, "m": 0.14, "type": "H"}, {"jour": 19, "h": 22.87, "m": 0.05, "type": "L"}, {"jour": 20, "h": 4.8, "m": 0.25, "type": "H"}, {"jour": 20, "h": 12.45, "m": -0.23, "type": "L"}, {"jour": 20, "h": 19.65, "m": 0.11, "type": "H"}, {"jour": 20, "h": 23.43, "m": 0.06, "type": "L"}, {"jour": 21, "h": 5.48, "m": 0.23, "type": "H"}, {"jour": 21, "h": 13.43, "m": -0.21, "type": "L"}, {"jour": 21, "h": 21.1, "m": 0.09, "type": "H"}, {"jour": 22, "h": 0.02, "m": 0.07, "type": "L"}, {"jour": 22, "h": 6.3, "m": 0.21, "type": "H"}, {"jour": 22, "h": 14.58, "m": -0.18, "type": "L"}, {"jour": 22, "h": 23.07, "m": 0.09, "type": "H"}, {"jour": 23, "h": 0.87, "m": 0.09, "type": "L"}], "previsions": [{"moment": "Lun 13 02h", "jour": 13, "heure": 2, "houle": 0.9, "periode": 8.8, "dir": "NE", "swell": 0.7, "swellPeriode": 6.8, "swellDir": "NE", "energie": 36, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Lun 13 08h", "jour": 13, "heure": 8, "houle": 0.9, "periode": 8.2, "dir": "NE", "swell": 0.6, "swellPeriode": 7.8, "swellDir": "NE", "energie": 33, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Lun 13 11h", "jour": 13, "heure": 11, "houle": 0.9, "periode": 8.0, "dir": "NE", "swell": 0.58, "swellPeriode": 7.8, "swellDir": "NE", "energie": 32, "vent": 25, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Lun 13 14h", "jour": 13, "heure": 14, "houle": 0.88, "periode": 7.7, "dir": "NE", "swell": 0.54, "swellPeriode": 7.8, "swellDir": "ENE", "energie": 30, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Lun 13 17h", "jour": 13, "heure": 17, "houle": 0.86, "periode": 7.8, "dir": "NE", "swell": 0.52, "swellPeriode": 7.8, "swellDir": "ENE", "energie": 29, "vent": 22, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Lun 13 20h", "jour": 13, "heure": 20, "houle": 0.84, "periode": 7.9, "dir": "NE", "swell": 0.52, "swellPeriode": 7.7, "swellDir": "ENE", "energie": 28, "vent": 22, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 02h", "jour": 14, "heure": 2, "houle": 0.8, "periode": 7.7, "dir": "NE", "swell": 0.48, "swellPeriode": 7.8, "swellDir": "ENE", "energie": 24, "vent": 19, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 08h", "jour": 14, "heure": 8, "houle": 0.8, "periode": 7.5, "dir": "NE", "swell": 0.48, "swellPeriode": 7.8, "swellDir": "ENE", "energie": 24, "vent": 26, "vdir": "SE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 11h", "jour": 14, "heure": 11, "houle": 0.8, "periode": 7.3, "dir": "NE", "swell": 0.48, "swellPeriode": 7.7, "swellDir": "ENE", "energie": 24, "vent": 26, "vdir": "SE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 14h", "jour": 14, "heure": 14, "houle": 0.82, "periode": 7.2, "dir": "NE", "swell": 0.48, "swellPeriode": 7.6, "swellDir": "NE", "energie": 24, "vent": 20, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 17h", "jour": 14, "heure": 17, "houle": 0.82, "periode": 7.3, "dir": "NE", "swell": 0.48, "swellPeriode": 7.4, "swellDir": "NE", "energie": 25, "vent": 19, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mar 14 20h", "jour": 14, "heure": 20, "houle": 0.8, "periode": 7.8, "dir": "NE", "swell": 0.48, "swellPeriode": 8.0, "swellDir": "N", "energie": 25, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 02h", "jour": 15, "heure": 2, "houle": 0.88, "periode": 7.5, "dir": "NE", "swell": 0.62, "swellPeriode": 5.8, "swellDir": "NE", "energie": 29, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 08h", "jour": 15, "heure": 8, "houle": 0.9, "periode": 7.3, "dir": "NE", "swell": 0.56, "swellPeriode": 8.3, "swellDir": "N", "energie": 30, "vent": 25, "vdir": "SE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 11h", "jour": 15, "heure": 11, "houle": 0.94, "periode": 7.2, "dir": "NE", "swell": 0.56, "swellPeriode": 8.3, "swellDir": "N", "energie": 32, "vent": 25, "vdir": "SE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 14h", "jour": 15, "heure": 14, "houle": 0.94, "periode": 7.2, "dir": "NE", "swell": 0.58, "swellPeriode": 8.2, "swellDir": "N", "energie": 32, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 17h", "jour": 15, "heure": 17, "houle": 0.92, "periode": 7.6, "dir": "NE", "swell": 0.58, "swellPeriode": 7.8, "swellDir": "N", "energie": 32, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Mer 15 20h", "jour": 15, "heure": 20, "houle": 0.88, "periode": 7.9, "dir": "NE", "swell": 0.56, "swellPeriode": 7.8, "swellDir": "N", "energie": 31, "vent": 20, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 02h", "jour": 16, "heure": 2, "houle": 0.88, "periode": 8.1, "dir": "NE", "swell": 0.54, "swellPeriode": 7.7, "swellDir": "N", "energie": 31, "vent": 25, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 08h", "jour": 16, "heure": 8, "houle": 0.88, "periode": 7.8, "dir": "NE", "swell": 0.52, "swellPeriode": 7.4, "swellDir": "NNE", "energie": 30, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 11h", "jour": 16, "heure": 11, "houle": 0.92, "periode": 7.5, "dir": "NE", "swell": 0.48, "swellPeriode": 7.3, "swellDir": "NNE", "energie": 32, "vent": 29, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 14h", "jour": 16, "heure": 14, "houle": 0.92, "periode": 7.5, "dir": "NE", "swell": 0.58, "swellPeriode": 8.3, "swellDir": "NNE", "energie": 32, "vent": 28, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 17h", "jour": 16, "heure": 17, "houle": 0.92, "periode": 7.4, "dir": "NE", "swell": 0.58, "swellPeriode": 8.2, "swellDir": "NNE", "energie": 31, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Jeu 16 20h", "jour": 16, "heure": 20, "houle": 0.9, "periode": 7.4, "dir": "NE", "swell": 0.56, "swellPeriode": 8.2, "swellDir": "NNE", "energie": 30, "vent": 28, "vdir": "E", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 02h", "jour": 17, "heure": 2, "houle": 0.84, "periode": 7.3, "dir": "NE", "swell": 0.54, "swellPeriode": 8.1, "swellDir": "NNE", "energie": 26, "vent": 23, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 08h", "jour": 17, "heure": 8, "houle": 0.86, "periode": 7.0, "dir": "NE", "swell": 0.52, "swellPeriode": 7.5, "swellDir": "NNE", "energie": 26, "vent": 26, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 11h", "jour": 17, "heure": 11, "houle": 0.92, "periode": 6.8, "dir": "NE", "swell": 0.52, "swellPeriode": 6.2, "swellDir": "ENE", "energie": 29, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 14h", "jour": 17, "heure": 14, "houle": 0.96, "periode": 6.8, "dir": "NE", "swell": 0.6, "swellPeriode": 6.8, "swellDir": "NE", "energie": 31, "vent": 27, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 17h", "jour": 17, "heure": 17, "houle": 0.98, "periode": 6.7, "dir": "NE", "swell": 0.64, "swellPeriode": 6.8, "swellDir": "NE", "energie": 32, "vent": 24, "vdir": "E", "vtype": "offshore", "note": 0}, {"moment": "Ven 17 20h", "jour": 17, "heure": 20, "houle": 0.96, "periode": 7.0, "dir": "NE", "swell": 0.66, "swellPeriode": 6.2, "swellDir": "NE", "energie": 32, "vent": 25, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 02h", "jour": 18, "heure": 2, "houle": 1.04, "periode": 6.7, "dir": "NE", "swell": 0.86, "swellPeriode": 5.3, "swellDir": "NE", "energie": 36, "vent": 21, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 08h", "jour": 18, "heure": 8, "houle": 1.08, "periode": 6.5, "dir": "NE", "swell": 0.78, "swellPeriode": 5.7, "swellDir": "NE", "energie": 38, "vent": 30, "vdir": "E", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 11h", "jour": 18, "heure": 11, "houle": 1.08, "periode": 6.5, "dir": "NE", "swell": 0.72, "swellPeriode": 5.0, "swellDir": "NE", "energie": 38, "vent": 31, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 14h", "jour": 18, "heure": 14, "houle": 1.04, "periode": 6.7, "dir": "NE", "swell": 0.76, "swellPeriode": 4.6, "swellDir": "NE", "energie": 36, "vent": 29, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 17h", "jour": 18, "heure": 17, "houle": 0.98, "periode": 6.8, "dir": "NE", "swell": 0.8, "swellPeriode": 5.7, "swellDir": "NE", "energie": 33, "vent": 25, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Sam 18 20h", "jour": 18, "heure": 20, "houle": 0.98, "periode": 6.9, "dir": "NE", "swell": 0.8, "swellPeriode": 5.7, "swellDir": "NE", "energie": 33, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 02h", "jour": 19, "heure": 2, "houle": 1.0, "periode": 6.8, "dir": "NE", "swell": 0.82, "swellPeriode": 5.7, "swellDir": "NE", "energie": 34, "vent": 24, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 08h", "jour": 19, "heure": 8, "houle": 1.12, "periode": 6.4, "dir": "NE", "swell": 0.84, "swellPeriode": 5.9, "swellDir": "NE", "energie": 40, "vent": 29, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 11h", "jour": 19, "heure": 11, "houle": 1.12, "periode": 6.5, "dir": "NE", "swell": 0.88, "swellPeriode": 5.8, "swellDir": "NE", "energie": 40, "vent": 30, "vdir": "ESE", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 14h", "jour": 19, "heure": 14, "houle": 1.06, "periode": 6.5, "dir": "NE", "swell": 0.84, "swellPeriode": 5.7, "swellDir": "NE", "energie": 37, "vent": 28, "vdir": "E", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 17h", "jour": 19, "heure": 17, "houle": 1.0, "periode": 6.7, "dir": "NE", "swell": 0.82, "swellPeriode": 5.5, "swellDir": "NE", "energie": 33, "vent": 28, "vdir": "E", "vtype": "offshore", "note": 0}, {"moment": "Dim 19 20h", "jour": 19, "heure": 20, "houle": 0.96, "periode": 6.7, "dir": "NE", "swell": 0.8, "swellPeriode": 5.5, "swellDir": "NE", "energie": 31, "vent": 28, "vdir": "E", "vtype": "offshore", "note": 0}]};</script><div class="header"><div><div class="title">Port-Louis · Surf</div><div class="coords">Grande-Terre · Guadeloupe · 16.43°N 61.54°W</div></div><button class="btn" onclick="location.reload()">↺ Actualiser</button></div><div class="vbox"><div class="verdict" id="verdict"></div><div class="phrase" id="phrase"></div><div class="now-label" id="now-label"></div><div class="ngrid" id="ngrid"></div></div><div class="alerts" id="alerts" style="display:none"></div><div class="legend"><span style="color:#4a6a5a">▶ meilleure session 72h</span><span style="color:#6a5a3a">★ note ≥ 2</span></div><div class="table-wrap"><table><thead><tr><th></th><th>Créneau</th><th>Houle</th><th>Pér.</th><th>Swell</th><th>Énergie</th><th>Vent</th><th>Marée</th></tr></thead><tbody id="tbody"></tbody></table></div><div class="foot" id="foot"></div><script>
 const C = {
-  houleHigh:  "#2a7a5a",
-  houleMid:   "#4a6a5a",
-  houleLow:   "#aaa",
-  ventFort:   "#aa4a4a",
-  ventMed:    "#8a6a2a",
-  ventLex:    "#2a6a5a",
-  energyHigh: "#2a6a4a",
-  energyMid:  "#5a7a4a",
-  energyLow:  "#bbb",
-  best:       "#2a6a4a",
-  star:       "#7a5a1a",
-  hmColor:    "#2a5a8a",
-  bmColor:    "#7a5a2a",
-  up:         "#2a7a5a",
-  down:       "#8a3a3a",
+  houleHigh: "#2a7a5a", houleMid: "#4a6a5a", houleLow: "#aaa",
+  ventFort:  "#aa4a4a", ventMed:  "#8a6a2a", ventLex:  "#2a6a5a",
+  energyH:   "#2a6a4a", energyM:  "#5a7a4a", energyL:  "#bbb",
+  best:      "#2a6a4a", star:     "#7a5a1a",
+  hmColor:   "#2a5a8a", bmColor:  "#7a5a2a",
+  up:        "#2a7a5a", down:     "#8a3a3a",
 };
 
 const hCol = h => h >= 0.8 ? C.houleHigh : h >= 0.5 ? C.houleMid : C.houleLow;
 const wCol = v => v >= 30 ? C.ventFort : v >= 25 ? C.ventMed : C.ventLex;
-const eCol = e => e >= 150 ? C.energyHigh : e >= 80 ? C.energyMid : C.energyLow;
+const eCol = e => e >= 80 ? C.energyH : e >= 40 ? C.energyM : C.energyL;
 
 const DIR = {
   N:"↓",NNE:"↙",NE:"↙",ENE:"↙",E:"←",ESE:"↖",SE:"↖",SSE:"↑",
   S:"↑",SSW:"↗",SW:"↗",WSW:"→",W:"→",WNW:"↘",NW:"↘",NNW:"↘",
-  NNO:"↘",NO:"↘",ONO:"↘",OSO:"→",SSO:"↗",SO:"↗",ENE:"↙",
 };
 
 function verdict(p) {
   const b = Math.max(...p.map(x => x.houle));
   const n = Math.max(...p.map(x => x.note));
-  if (b >= 1.2 || n >= 4) return {v:"GO",        c:"#6a8a7a", ph:"La mer a décidé de coopérer. Rare."};
-  if (b >= 0.65|| n >= 1) return {v:"BORDERLINE", c:"#8a7a5a", ph:"Surfable pour qui sait chercher. Les autres rentrent bredouilles."};
-  return                         {v:"NO-GO",       c:"#8a5a5a", ph:"La mer a pris un jour de congé. Sans culpabilité."};
+  if (b >= 1.2 || n >= 4) return {v:"GO",        c:"#2a7a5a", ph:"La mer a décidé de coopérer. Rare."};
+  if (b >= 0.65|| n >= 1) return {v:"BORDERLINE", c:"#8a6a2a", ph:"Surfable pour qui sait chercher. Les autres rentrent bredouilles."};
+  return                         {v:"NO-GO",       c:"#8a3a3a", ph:"La mer a pris un jour de congé. Sans culpabilité."};
 }
 
 function tideInfo(marees, jour, heure) {
   if (!marees || !marees.length) return {sens:"—", prochain:null};
   const t = jour * 24 + heure;
-  const sorted = [...marees].sort((a,b) => (a.jour*24+a.h) - (b.jour*24+b.h));
+  const sorted = [...marees].sort((a,b) => (a.jour*24+a.h)-(b.jour*24+b.h));
   let prev = null, next = null;
   for (const m of sorted) {
     if (m.jour*24+m.h <= t) prev = m;
@@ -75,60 +64,51 @@ function tideInfo(marees, jour, heure) {
 
 function fmtH(m) {
   if (!m) return "—";
-  const h = Math.floor(m.h), min = Math.round((m.h - h) * 60);
-  return String(h).padStart(2,"0") + "h" + (min > 0 ? String(min).padStart(2,"0") : "");
+  const h = Math.floor(m.h), min = Math.round((m.h-h)*60);
+  return String(h).padStart(2,"0")+"h"+(min>0?String(min).padStart(2,"0"):"");
 }
 
 function render() {
   const S = window.SURF_DATA;
   if (!S || !S.previsions || !S.previsions.length) return;
+  const vd = verdict(S.previsions), now = S.previsions[0];
 
-  const vd  = verdict(S.previsions);
-  const now = S.previsions[0];
-
-  document.getElementById("verdict").style.color    = vd.c;
-  document.getElementById("verdict").textContent    = vd.v;
-  document.getElementById("phrase").textContent     = '"' + vd.ph + '"';
-  document.getElementById("now-label").textContent  = "Maintenant · " + now.moment;
+  document.getElementById("verdict").style.color   = vd.c;
+  document.getElementById("verdict").textContent   = vd.v;
+  document.getElementById("phrase").textContent    = '"' + vd.ph + '"';
+  document.getElementById("now-label").textContent = "Maintenant · " + now.moment;
 
   document.getElementById("ngrid").innerHTML = [
-    ["Houle",   now.houle  + "m",              hCol(now.houle)],
-    ["Période", now.periode + "s",             "#555"],
-    ["Dir.",    now.dir,                       "#4a4a4a"],
-    ["Énergie", now.energie + " kJ",           eCol(now.energie)],
-    ["Vent",    now.vent + "km/h " + now.vdir, wCol(now.vent)],
-    ["Eau",     S.tempEau + "°C",              "#5a7a7a"],
+    ["Houle",   now.houle+"m",             hCol(now.houle)],
+    ["Période", now.periode+"s",           "#555"],
+    ["Dir.",    now.dir,                   "#4a4a4a"],
+    ["Swell",   now.swell+"m "+now.swellPeriode+"s", "#3a6a8a"],
+    ["Vent",    now.vent+"km/h "+now.vdir, wCol(now.vent)],
+    ["Eau",     S.tempEau+"°C",            "#2a6a7a"],
   ].map(([l,v,c]) =>
     `<div class="ncell"><div class="nlabel">${l}</div><div class="nval" style="color:${c}">${v}</div></div>`
   ).join("");
 
   if (S.alertes && S.alertes.length) {
     const al = document.getElementById("alerts");
-    al.textContent   = S.alertes.join("  ·  ");
+    al.textContent = S.alertes.join("  ·  ");
     al.style.display = "block";
   }
 
   const B = S.bestSession;
   document.getElementById("tbody").innerHTML = S.previsions.map(r => {
-    const best = B && r.jour === B.jour && r.heure === B.heure;
+    const best = B && r.jour===B.jour && r.heure===B.heure;
     const {sens, prochain} = tideInfo(S.marees, r.jour, r.heure);
-    const up = sens === "montant";
-
-    const bg = best ? "#e8f2ec" : r.note >= 1 ? "#f0f5f0" : "transparent";
-    const bl = best ? `2px solid ${C.best}` : "2px solid transparent";
+    const up   = sens === "montant";
+    const bg   = best ? "#e8f2ec" : r.note>=1 ? "#f0f5f0" : "transparent";
+    const bl   = best ? `2px solid ${C.best}` : "2px solid transparent";
     const badge = best
       ? `<span style="color:${C.best};font-size:0.65rem">▶</span>`
-      : r.note >= 2
-        ? `<span style="color:${C.star};font-size:0.6rem">★</span>`
-        : "";
-
-    const ew  = Math.min(r.energie / 200 * 100, 100);
-    const tc  = up ? C.up : C.down;
-
-    // Marée : flèche + heure + hauteur
-    const mCol  = prochain ? (prochain.type === "H" ? C.hmColor : C.bmColor) : "#bbb";
+      : r.note>=2 ? `<span style="color:${C.star};font-size:0.6rem">★</span>` : "";
+    const ew   = Math.min(r.energie/120*100, 100);
+    const mCol = prochain ? (prochain.type==="H" ? C.hmColor : C.bmColor) : "#bbb";
     const mLabel = prochain
-      ? `${prochain.type === "H" ? "HM" : "BM"} ${fmtH(prochain)} ${prochain.m > 0 ? "+" : ""}${prochain.m}m`
+      ? `${prochain.type==="H"?"HM":"BM"} ${fmtH(prochain)} ${prochain.m>0?"+":""}${prochain.m}m`
       : "—";
 
     return `<tr style="background:${bg};border-left:${bl}">
@@ -138,9 +118,10 @@ function render() {
   <span style="font-size:13px;color:${hCol(r.houle)}">${DIR[r.dir]||"•"}</span>
   <span style="color:${hCol(r.houle)};font-weight:${r.houle>=0.7?400:300}">${r.houle}m</span>
 </div></td>
-<td style="color:#777">${r.periode}s</td>
+<td style="color:#666">${r.periode}s</td>
+<td style="color:#3a6a8a;font-size:0.58rem;white-space:nowrap">${r.swell}m ${r.swellPeriode}s <span style="color:#aaa">${r.swellDir}</span></td>
 <td><div style="display:flex;align-items:center;gap:4px">
-  <div style="flex:1;height:2px;background:#ddd;position:relative;min-width:36px">
+  <div style="flex:1;height:2px;background:#ddd;position:relative;min-width:32px">
     <div style="position:absolute;left:0;top:0;height:100%;width:${ew}%;background:${eCol(r.energie)}"></div>
   </div>
   <span style="font-size:0.54rem;color:${eCol(r.energie)};min-width:22px;text-align:right">${r.energie}</span>
@@ -151,13 +132,14 @@ function render() {
   <span style="color:#999;font-size:0.52rem">${r.vdir}</span>
 </div></td>
 <td><div style="display:flex;align-items:center;gap:4px">
-  <span style="font-size:0.85rem;color:${tc};line-height:1">${up?"↑":"↓"}</span>
+  <span style="font-size:0.85rem;color:${up?C.up:C.down};line-height:1">${up?"↑":"↓"}</span>
   <span style="font-size:0.5rem;color:${mCol}">${mLabel}</span>
 </div></td>
 </tr>`;
   }).join("");
 
-  document.getElementById("foot").textContent = "stormglass.io · " + S.updated + " · live";
+  document.getElementById("foot").textContent =
+    "Open-Meteo · Stormglass · " + S.updated + " · Houle=vague totale | Swell=houle longue distance";
 }
 
 document.addEventListener("DOMContentLoaded", render);
