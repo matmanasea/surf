@@ -285,13 +285,13 @@ function render(){
     const swellRow=CRENEAUX.map(h=>{
       const s=slotMap[h];
       if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${propArrow(s.sd,"#3a6a8a")}<span style="color:#3a6a8a;font-weight:${s.sh>=0.5?500:300}">${s.sh}m</span><span class="sub"> ${s.sp}s</span></td>`;
+      return`<td ${cs(h)}>${propArrow(s.sd,"#3a6a8a")}<span style="color:#3a6a8a;font-weight:${s.sh>=0.5?500:300}">${s.sh}m</span><span class="sub"> ${s.sp}s ${s.sd}</span></td>`;
     }).join("");
 
     const vagueRow=CRENEAUX.map(h=>{
       const s=slotMap[h];
       if(!s)return`<td ${cs(h)}>—</td>`;
-      return`<td ${cs(h)}>${propArrow(s.wd,hCol(s.wh))}<span style="color:${hCol(s.wh)};font-weight:${s.wh>=0.7?500:300}">${s.wh}m</span><span class="sub"> ${s.wp}s</span></td>`;
+      return`<td ${cs(h)}>${propArrow(s.wd,hCol(s.wh))}<span style="color:${hCol(s.wh)};font-weight:${s.wh>=0.7?500:300}">${s.wh}m</span><span class="sub"> ${s.wp}s ${s.wd}</span></td>`;
     }).join("");
 
     const kjRow=CRENEAUX.map(h=>{
