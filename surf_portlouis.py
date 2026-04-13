@@ -65,10 +65,14 @@ def fetch_marees():
             r'(High Tide|Low Tide)</td><td><b>\s*(\d{1,2}:\d{2}\s*[AP]M)</b><span[^>]*>\((?:\w+\s+)(\d{1,2})\s+\w+\)',
             r.text
         )
-        hauteurs = re.findall(
-            r'<b class="js-two-units-length-value__primary">([-\d.]+)\s*m</b>',
-            r.text
-        )
+        # Plusieurs patterns possibles pour les hauteurs
+        hauteurs = re.findall(r'<b class="js-two-units-length-value__primary">([-\d.]+)\s*m</b>', r.text)
+        if not hauteurs:
+            hauteurs = re.findall(r'"primary">([-\d.]+)\s*m<', r.text)
+        if not hauteurs:
+            hauteurs = re.findall(r'>([-\d.]+)\s*m</b>', r.text)
+
+        print(f"  types_heures: {len(types_heures)}, hauteurs: {len(hauteurs)}, premiers: {hauteurs[:4]}")
 
         for idx, (tide_type, time_str, jour_str) in enumerate(types_heures):
             t = datetime.strptime(time_str.strip(), "%I:%M %p")
