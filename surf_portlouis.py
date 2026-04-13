@@ -70,7 +70,7 @@ def detect_marees(times, levels):
 
     print(f"Marées détectées: {len(marees)}")
     for m in marees[:8]:
-        print(f"  Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
+        print(f"  Jour {m['jour']} {m['h']:.2f}h -> {m['m']}m {'HM' if m['type']==\"H\" else \"BM\"}")
     return marees
 
 
