@@ -43,47 +43,45 @@ def fetch_open_meteo():
 
 
 # ─── Stormglass marées ────────────────────────────────────────────────────────
-# ─── Marées tide-forecast.com (gratuit, sans clé) ────────────────────────────
+# ─── Marées tide-forecast.com ────────────────────────────────────────────────
 def fetch_marees():
     print("Fetching marées tide-forecast.com...")
     try:
         r = requests.get(
             "https://www.tide-forecast.com/locations/Port-Louis-1/tides/latest",
-            headers={"User-Agent": "Mozilla/5.0"},
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
             timeout=15
         )
         r.raise_for_status()
 
-        marees = []
         import re
-        # Extraire les lignes de marées : "High Tide | 2:35 AM(Mon 13 April) | 1.05 ft (0.32 m)"
-        pattern = r'(High Tide|Low Tide)\s*\|\s*\*\*(\d+:\d+\s+[AP]M)\*\*\s*\((\w+\s+\d+\s+\w+)\)\s*\|\s*\*\*([\d.]+)\s*ft\s*\(([\d.-]+)\s*m\)\*\*'
-        matches = re.findall(pattern, r.text)
+        marees = []
 
-        # Mapping mois anglais → numéro
-        MOIS = {"January":1,"February":2,"March":3,"April":4,"May":5,"June":6,
-                "July":7,"August":8,"September":9,"October":10,"November":11,"December":12}
+        # Le HTML contient des lignes comme :
+        # | High Tide | **2:35 AM**(Mon 13 April) | **1.05 ft** (0.32 m) |
+        # On cherche ce pattern dans le texte brut
+        # Parser en deux passes : d'abord les types+heures+jours, puis les hauteurs
+        types_heures = re.findall(
+            r'(High Tide|Low Tide)</td><td><b>\s*(\d{1,2}:\d{2}\s*[AP]M)</b><span[^>]*>\((?:\w+\s+)(\d{1,2})\s+\w+\)',
+            r.text
+        )
+        hauteurs = re.findall(
+            r'<b class="js-two-units-length-value__primary">([-\d.]+)\s*m</b>',
+            r.text
+        )
 
-        for m in matches:
-            tide_type, time_str, date_str, ft, height_m = m
-            # Parser heure : "2:35 AM"
-            time_clean = time_str.strip()
-            fmt = "%I:%M %p"
-            t = datetime.strptime(time_clean, fmt)
-            h_dec = round(t.hour + t.minute / 60, 2)
-            # Parser date : "Mon 13 April"
-            parts = date_str.strip().split()
-            jour = int(parts[1])
+        for i, (tide_type, time_str, jour_str) in enumerate(types_heures):
+            t = datetime.strptime(time_str.strip(), "%I:%M %p")
+            hm = float(hauteurs[i]) if i < len(hauteurs) else 0.0
             marees.append({
-                "jour": jour,
-                "h":    h_dec,
-                "m":    float(height_m),
+                "jour": int(jour_str),
+                "h":    round(t.hour + t.minute / 60, 2),
+                "m":    hm,
                 "type": "H" if "High" in tide_type else "L",
             })
 
         print(f"OK — {len(marees)} points marées")
-        print("  Marées (AST):")
-        for m in marees[:6]:
+        for m in marees[:8]:
             print(f"    Jour {m['jour']} {m['h']:.2f}h → {m['m']}m {'HM' if m['type']=='H' else 'BM'}")
         return marees
 
