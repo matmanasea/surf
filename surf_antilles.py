@@ -151,6 +151,7 @@ CSS = """
   --fnt:  #bbb;
   --lw:   68px;
   --cw:   52px;
+  --gh:   38px;  /* gauge cell height */
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', monospace; font-size: 11px; min-height: 100vh; }
@@ -166,7 +167,6 @@ body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', m
 .spot-name    { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--mut); font-weight: 300; }
 .spot-verdict { font-size: 15px; letter-spacing: 3px; font-weight: 300; }
 .spot-upd     { font-size: 8px; color: var(--fnt); margin-left: auto; }
-
 .alerts { padding: 5px 14px; background: #fdf5e8; border-bottom: 1px solid #e8d8a0; font-size: 9px; color: #8a6020; }
 
 .wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -181,49 +181,76 @@ body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', m
 }
 .lbl.sect { background: var(--bg2); color: var(--mut); font-size: 7.5px; border-bottom: 1px solid var(--sep); font-weight: 400; }
 
-.dc { width: var(--cw); min-width: var(--cw); max-width: var(--cw); border-bottom: 1px solid var(--bdr); border-right: 1px solid #ebe8e3; text-align: center; vertical-align: middle; white-space: nowrap; position: relative; }
+.dc {
+  width: var(--cw); min-width: var(--cw); max-width: var(--cw);
+  border-bottom: 1px solid var(--bdr); border-right: 1px solid #ebe8e3;
+  text-align: center; vertical-align: middle; white-space: nowrap; position: relative;
+  padding: 0;
+}
 .dc.sep { border-left: 2px solid var(--sep); }
 
+/* Row heights */
 tr.r-day  td { height: 22px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
 tr.r-time td { height: 26px; background: var(--card); }
 tr.r-sect td { height: 11px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
 tr.r-vdir td { height: 26px; background: #fafaf8; }
-tr.r-vkmh td { height: 26px; background: var(--card); }
-tr.r-sdir td { height: 26px; background: #fafaf8; }
-tr.r-sh   td { height: 26px; background: var(--card); }
-tr.r-sp   td { height: 26px; background: #fafaf8; }
-tr.r-skj  td { height: 26px; background: var(--card); }
+tr.r-vkmh td { height: var(--gh); background: var(--card); }
 tr.r-wdir td { height: 26px; background: #fafaf8; }
-tr.r-wh   td { height: 26px; background: var(--card); }
-tr.r-wp   td { height: 26px; background: #fafaf8; }
-tr.r-marr td { height: 26px; background: var(--card); }
-tr.r-mhbm td { height: 26px; background: #fafaf8; }
-tr.r-mm   td { height: 26px; background: var(--card); }
+tr.r-wh   td { height: var(--gh); background: var(--card); }
+tr.r-wp   td { height: var(--gh); background: #fafaf8; }
+tr.r-wkj  td { height: var(--gh); background: var(--card); }
+tr.r-marr td { height: 26px; background: #fafaf8; }
+tr.r-mhbm td { height: 26px; background: var(--card); }
+tr.r-mm   td { height: 26px; background: #fafaf8; }
 
+/* Sticky label bg */
 tr.r-day  .lbl { background: var(--bg2); }
 tr.r-time .lbl { background: var(--bg); }
 tr.r-sect .lbl { background: var(--bg2); }
 tr.r-vdir .lbl { background: #f5f3f0; }
 tr.r-vkmh .lbl { background: var(--bg); }
-tr.r-sdir .lbl { background: #f5f3f0; }
-tr.r-sh   .lbl { background: var(--bg); }
-tr.r-sp   .lbl { background: #f5f3f0; }
-tr.r-skj  .lbl { background: var(--bg); }
 tr.r-wdir .lbl { background: #f5f3f0; }
 tr.r-wh   .lbl { background: var(--bg); }
 tr.r-wp   .lbl { background: #f5f3f0; }
-tr.r-marr .lbl { background: var(--bg); }
-tr.r-mhbm .lbl { background: #f5f3f0; }
-tr.r-mm   .lbl { background: var(--bg); }
+tr.r-wkj  .lbl { background: var(--bg); }
+tr.r-marr .lbl { background: #f5f3f0; }
+tr.r-mhbm .lbl { background: var(--bg); }
+tr.r-mm   .lbl { background: #f5f3f0; }
 
-.day-cell  { font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--mut); font-weight: 400; }
+.day-cell  { font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--mut); font-weight: 400; padding: 0 4px; }
 .day-cell.today { color: #2d7a52; font-weight: 500; }
 .time-cell { font-size: 10px; color: var(--mut); font-weight: 300; }
 .time-cell.is-now  { color: #2d7a52; font-weight: 600; background: #e8f2ec; }
 .time-cell.is-best { color: #8a6e2a; font-weight: 500; background: #f5f2ea; }
 
-.kj-bar  { width: 32px; height: 3px; background: #e0ddd8; position: relative; display: inline-block; vertical-align: middle; margin-right: 2px; }
-.kj-fill { position: absolute; left: 0; top: 0; height: 100%; }
+/* ── GAUGE ── */
+.gauge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: var(--gh);
+  padding: 0 0 2px;
+  gap: 1px;
+}
+.gauge-track {
+  width: 100%;
+  height: 24px;
+  background: #eae7e2;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.gauge-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+}
+.gauge-val {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--mut);
+}
 
 .foot { padding: 7px 14px; font-size: 8px; color: var(--fnt); border-top: 1px solid var(--bdr); font-style: italic; }
 """
@@ -234,9 +261,21 @@ const PROP_DEG={N:180,NNE:202,NE:225,ENE:247,E:270,ESE:292,SE:315,SSE:337,S:0,SS
 
 const arr=(dir,col,sz=13)=>`<span style="display:inline-block;transform:rotate(${PROP_DEG[dir]||0}deg);color:${col};font-size:${sz}px;line-height:1">↑</span>`;
 const wCol=v=>v>=30?'#a03030':v>=20?'#8a6e2a':'#2d7a52';
-const sCol=s=>s>=0.8?'#1e5f8a':s>=0.5?'#3a7aaa':'#aaa';
-const hCol=h=>h>=0.8?'#1e6a42':h>=0.5?'#3a8a62':'#aaa';
+const hCol=h=>h>=1.5?'#1e6a42':h>=0.8?'#3a8a62':h>=0.4?'#5aaa82':'#aaa';
+const pCol=p=>p>=12?'#1e5f8a':p>=9?'#3a7aaa':p>=7?'#6a9aba':'#aaa';
 const eCol=e=>e>=150?'#2a6a44':e>=50?'#5a7a44':'#bbb';
+
+// Gauge cell HTML
+// val=value, max=scale max, col=fill color, label=display string
+function gauge(val, max, col, label) {
+  const pct = Math.min(val / max * 100, 100);
+  return `<div class="gauge-cell">
+    <div class="gauge-track">
+      <div class="gauge-fill" style="height:${pct}%;background:${col}"></div>
+    </div>
+    <span class="gauge-val" style="color:${col}">${label}</span>
+  </div>`;
+}
 
 function verdict(prev,now){
   const fut=prev.filter(x=>new Date(x.dt)>=now).slice(0,24);
@@ -259,6 +298,9 @@ function tHStr(m){
   return String(h).padStart(2,'0')+'h'+(mn>0?String(mn).padStart(2,'0'):'');
 }
 
+  return{nom,updated:'Lun 13 Apr 2026 19h00',alertes:[],marees,previsions:prev};
+}
+
 function buildTable(S,now){
   const nowMs=now.getTime(),ms72=72*3600*1000;
   let curKey=null,minDiff=Infinity;
@@ -270,7 +312,7 @@ function buildTable(S,now){
   for(const p of S.previsions){if(!cd||cd.label!==p.label){cd={label:p.label,slots:[]};days.push(cd);}cd.slots.push(p);}
 
   const P=S.previsions;
-  const R={day:[],time:[],vdir:[],vkmh:[],sdir:[],sh:[],sp:[],skj:[],wdir:[],wh:[],wp:[],marr:[],mhbm:[],mm:[]};
+  const R={day:[],time:[],vdir:[],vkmh:[],wdir:[],wh:[],wp:[],wkj:[],marr:[],mhbm:[],mm:[]};
 
   days.forEach((day,di)=>{
     const vj=verdictJour(day.slots);
@@ -279,21 +321,27 @@ function buildTable(S,now){
       const isNow=s.dt===curKey,isBest=s.dt===bestKey;
       const tide=nextTide(S.marees,s.jour,s.mois,s.heure);
       const tc=tide?(tide.type==='H'?'#2a5a8a':'#8a6a2a'):'#bbb';
-      const ew=Math.min(s.energie/400*100,100);
       const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#8a6e2a">★</span>':'';
 
       if(isFirst) R.day.push(`<td class="dc day-cell${sc}${di===0?' today':''}" colspan="${day.slots.length}" style="color:${vj.c}">${day.label}&nbsp;<span style="font-size:7px;opacity:.6">${vj.v}</span></td>`);
 
       R.time.push(`<td class="dc time-cell${sc}${isNow?' is-now':isBest?' is-best':''}">${String(s.heure).padStart(2,'0')}h${badge}</td>`);
+
+      // Vent dir
       R.vdir.push(`<td class="dc${sc}">${arr(s.vdir,wCol(s.vent))}</td>`);
-      R.vkmh.push(`<td class="dc${sc}"><span style="color:${wCol(s.vent)};font-weight:${s.vent>=25?600:300}">${s.vent}</span></td>`);
-      R.sdir.push(`<td class="dc${sc}">${arr(s.sd,sCol(s.sh))}</td>`);
-      R.sh.push(`<td class="dc${sc}"><span style="color:${sCol(s.sh)};font-weight:${s.sh>=0.5?600:300}">${s.sh}</span></td>`);
-      R.sp.push(`<td class="dc${sc}"><span style="color:var(--fnt)">${s.sp}</span></td>`);
-      R.skj.push(`<td class="dc${sc}"><div class="kj-bar"><div class="kj-fill" style="width:${ew}%;background:${eCol(s.energie)}"></div></div><span style="color:${eCol(s.energie)};font-size:9px">${s.energie}</span></td>`);
+      // Vent km/h — jauge
+      R.vkmh.push(`<td class="dc${sc}">${gauge(s.vent, 50, '#7aaa88', s.vent)}</td>`);
+
+      // Vague dir
       R.wdir.push(`<td class="dc${sc}">${arr(s.wd,hCol(s.wh))}</td>`);
-      R.wh.push(`<td class="dc${sc}"><span style="color:${hCol(s.wh)};font-weight:${s.wh>=0.7?600:300}">${s.wh}</span></td>`);
-      R.wp.push(`<td class="dc${sc}"><span style="color:var(--fnt)">${s.wp}</span></td>`);
+      // Vague m — jauge
+      R.wh.push(`<td class="dc${sc}">${gauge(s.wh, 3, '#6a9aba', s.wh+'m')}</td>`);
+      // Vague s — jauge
+      R.wp.push(`<td class="dc${sc}">${gauge(s.wp, 15, '#4a7aaa', s.wp+'s')}</td>`);
+      // kJ — jauge
+      R.wkj.push(`<td class="dc${sc}">${gauge(s.energie, 400, '#2a5a8a', s.energie)}</td>`);
+
+      // Marée
       R.marr.push(`<td class="dc${sc}"><span style="color:${tc};font-size:14px">${tide?(tide.type==='H'?'↑':'↓'):'—'}</span></td>`);
       R.mhbm.push(`<td class="dc${sc}"><span style="color:${tc};font-size:9px">${tide?(tide.type==='H'?'HM':'BM')+' '+tHStr(tide):'—'}</span></td>`);
       R.mm.push(`<td class="dc${sc}"><span style="color:${tc}">${tide?tide.m.toFixed(2)+'m':'—'}</span></td>`);
@@ -312,15 +360,11 @@ function buildTable(S,now){
       ${sect('Vent km/h')}
       <tr class="r-vdir"><td class="lbl">dir</td>${R.vdir.join('')}</tr>
       <tr class="r-vkmh"><td class="lbl">km/h</td>${R.vkmh.join('')}</tr>
-      ${sect('Swell')}
-      <tr class="r-sdir"><td class="lbl">dir</td>${R.sdir.join('')}</tr>
-      <tr class="r-sh">  <td class="lbl">m</td>${R.sh.join('')}</tr>
-      <tr class="r-sp">  <td class="lbl">s</td>${R.sp.join('')}</tr>
-      <tr class="r-skj"> <td class="lbl">kJ</td>${R.skj.join('')}</tr>
       ${sect('Vague')}
       <tr class="r-wdir"><td class="lbl">dir</td>${R.wdir.join('')}</tr>
       <tr class="r-wh">  <td class="lbl">m</td>${R.wh.join('')}</tr>
       <tr class="r-wp">  <td class="lbl">s</td>${R.wp.join('')}</tr>
+      <tr class="r-wkj"> <td class="lbl">kJ</td>${R.wkj.join('')}</tr>
       ${sect('Marée m')}
       <tr class="r-marr"><td class="lbl">↑↓</td>${R.marr.join('')}</tr>
       <tr class="r-mhbm"><td class="lbl">HM/BM</td>${R.mhbm.join('')}</tr>
@@ -334,10 +378,8 @@ function render(){
   if(!spots||!spots.length)return;
   const now=new Date();
   document.getElementById('upd').textContent=spots[0].updated;
-
   const container=document.getElementById('spots');
   container.innerHTML='';
-
   spots.forEach((S,si)=>{
     const{vd,html,curIdx}=buildTable(S,now);
     const alertHTML=S.alertes&&S.alertes.length?`<div class="alerts">${S.alertes.join('  ·  ')}</div>`:'';
@@ -353,12 +395,10 @@ function render(){
     container.appendChild(div);
     if(curIdx>=0) setTimeout(()=>{const w=document.getElementById(`w${si}`);if(w)w.scrollLeft=Math.max(0,curIdx*52-52);},80+si*30);
   });
-
-  document.getElementById('foot').textContent=
-    'Open-Meteo · '+spots[0].updated+' · Swell=houle longue distance · kJ=énergie swell · ◀=maintenant · ★=meilleure 72h';
+  document.getElementById('foot').textContent='Open-Meteo · '+spots[0].updated+' · kJ=énergie vague (H²×T²×2) · ◀=maintenant · ★=meilleure 72h';
 }
-
 document.addEventListener('DOMContentLoaded',render);
+
 """
 
 
