@@ -298,9 +298,6 @@ function tHStr(m){
   return String(h).padStart(2,'0')+'h'+(mn>0?String(mn).padStart(2,'0'):'');
 }
 
-  return{nom,updated:'Lun 13 Apr 2026 19h00',alertes:[],marees,previsions:prev};
-}
-
 function buildTable(S,now){
   const nowMs=now.getTime(),ms72=72*3600*1000;
   let curKey=null,minDiff=Infinity;
