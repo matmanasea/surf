@@ -96,7 +96,7 @@ def process_spot(om, ow, nom):
         ws  = ow["hourly"]["wind_speed_10m"][i]        or 0
         wsd = ow["hourly"]["wind_direction_10m"][i]
 
-        energie = round(sh**2 * sp**2 * 2)
+        energie = round(wh**2 * wp**2 * 2)
 
         previsions.append({
             "label":   f"{JOURS_FR[t_ast.weekday()]} {t_ast.day}",
