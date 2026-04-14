@@ -324,9 +324,13 @@ function buildTable(S,now){
   const nowMs=now.getTime(),ms72=72*3600*1000;
   let curKey=null,minDiff=Infinity;
   for(const p of S.previsions){const d=Math.abs(new Date(p.dt).getTime()-nowMs);if(d<minDiff){minDiff=d;curKey=p.dt;}}
-  // Top 3 énergie sur 16 jours (hors créneau actuel)
-  const sorted=[...S.previsions].sort((a,b)=>b.energie-a.energie);
-  const top3=new Set(sorted.slice(0,3).map(p=>p.dt));
+  // Top 3 : 1 meilleur dans 72h + 2 meilleurs au-delà
+  const ms72=72*3600*1000;
+  const within72=S.previsions.filter(p=>new Date(p.dt).getTime()-nowMs<=ms72&&new Date(p.dt)>=now);
+  const beyond72=S.previsions.filter(p=>new Date(p.dt).getTime()-nowMs>ms72);
+  const best72=within72.sort((a,b)=>b.energie-a.energie).slice(0,1);
+  const best2beyond=beyond72.sort((a,b)=>b.energie-a.energie).slice(0,2);
+  const top3=new Set([...best72,...best2beyond].map(p=>p.dt));
 
   const days=[];let cd=null;
   for(const p of S.previsions){if(!cd||cd.label!==p.label){cd={label:p.label,slots:[]};days.push(cd);}cd.slots.push(p);}
