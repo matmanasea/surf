@@ -325,7 +325,6 @@ function buildTable(S,now){
   let curKey=null,minDiff=Infinity;
   for(const p of S.previsions){const d=Math.abs(new Date(p.dt).getTime()-nowMs);if(d<minDiff){minDiff=d;curKey=p.dt;}}
   // Top 3 : 1 meilleur dans 72h + 2 meilleurs au-delà
-  const ms72=72*3600*1000;
   const within72=S.previsions.filter(p=>new Date(p.dt).getTime()-nowMs<=ms72&&new Date(p.dt)>=now);
   const beyond72=S.previsions.filter(p=>new Date(p.dt).getTime()-nowMs>ms72);
   const best72=within72.sort((a,b)=>b.energie-a.energie).slice(0,1);
