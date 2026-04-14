@@ -147,8 +147,8 @@ CSS = """
   --bdr:  #dedad4;
   --sep:  #c8c4bc;
   --txt:  #1a1a1a;
-  --mut:  #888;
-  --fnt:  #bbb;
+  --mut:  #444;
+  --fnt:  #555;
   --lw:   68px;
   --cw:   52px;
   --gh:   38px;  /* gauge cell height */
@@ -176,7 +176,7 @@ body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', m
   position: sticky; left: 0; z-index: 10;
   width: var(--lw); min-width: var(--lw); max-width: var(--lw);
   background: var(--bg); border-right: 1px solid var(--sep); border-bottom: 1px solid var(--bdr);
-  text-align: right; padding: 0 7px; font-size: 8px; letter-spacing: 1px; color: var(--fnt);
+  text-align: right; padding: 0 7px; font-size: 8px; letter-spacing: 1px; color: #555;
   font-weight: 300; text-transform: uppercase; white-space: nowrap; vertical-align: middle;
 }
 .lbl.sect { background: var(--bg2); color: var(--mut); font-size: 7.5px; border-bottom: 1px solid var(--sep); font-weight: 400; }
@@ -189,9 +189,9 @@ body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', m
 }
 .dc.sep      { border-left: 2px solid var(--sep); }
 .dc.col-now  { background: #eef5f0 !important; }
-.dc.col-best { background: #f5f0e4 !important; }
+.dc.col-best { background: #fdf0f0 !important; }
 .time-cell.is-now  { background: #2d7a52 !important; color: #fff !important; font-weight: 600; }
-.time-cell.is-best { background: #8a6e2a !important; color: #fff !important; font-weight: 600; }
+.time-cell.is-best { background: #c03030 !important; color: #fff !important; font-weight: 600; }
 
 /* Row heights */
 tr.r-day  td { height: 22px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
@@ -223,7 +223,7 @@ tr.r-maree .lbl { background: var(--bg); }
 
 .day-cell  { font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--mut); font-weight: 400; padding: 0 4px; }
 .day-cell.today { color: #2d7a52; font-weight: 500; }
-.time-cell { font-size: 10px; color: var(--mut); font-weight: 300; }
+.time-cell { font-size: 10px; color: var(--txt); font-weight: 400; }
 
 /* ── GAUGE ── */
 .gauge-cell {
@@ -301,20 +301,20 @@ function tHStr(m){
 }
 function fmtTide(tide){
   if(!tide)return'<span style="color:var(--fnt);font-size:9px">—</span>';
-  const col=tide.type==='H'?'#2a5a8a':'#8a6a2a';
+  const col='#2a5a8a';
   const arr=tide.type==='H'?'↑':'↓';
   const hstr=tHStr(tide);
   const hm=tide.m.toFixed(2)+'m';
   if(tide.type==='H'){
     return`<div style="display:flex;flex-direction:column;align-items:center;line-height:1.4;gap:0">
       <span style="font-size:9px;font-weight:600;color:${col}">${hm}</span>
-      <span style="font-size:12px;color:#888;line-height:1">${arr}</span>
-      <span style="font-size:8.5px;color:#888">${hstr}</span>
+      <span style="font-size:12px;color:#444;line-height:1">${arr}</span>
+      <span style="font-size:8.5px;color:#444">${hstr}</span>
     </div>`;
   } else {
     return`<div style="display:flex;flex-direction:column;align-items:center;line-height:1.4;gap:0">
-      <span style="font-size:8.5px;color:#888">${hstr}</span>
-      <span style="font-size:12px;color:#888;line-height:1">${arr}</span>
+      <span style="font-size:8.5px;color:#444">${hstr}</span>
+      <span style="font-size:12px;color:#444;line-height:1">${arr}</span>
       <span style="font-size:9px;font-weight:600;color:${col}">${hm}</span>
     </div>`;
   }
@@ -324,8 +324,9 @@ function buildTable(S,now){
   const nowMs=now.getTime(),ms72=72*3600*1000;
   let curKey=null,minDiff=Infinity;
   for(const p of S.previsions){const d=Math.abs(new Date(p.dt).getTime()-nowMs);if(d<minDiff){minDiff=d;curKey=p.dt;}}
-  const fut72=S.previsions.filter(p=>new Date(p.dt)>=now&&new Date(p.dt).getTime()-nowMs<=ms72);
-  const bestKey=fut72.length?fut72.reduce((a,b)=>b.energie>a.energie?b:a).dt:null;
+  // Top 3 énergie sur 16 jours (hors créneau actuel)
+  const sorted=[...S.previsions].sort((a,b)=>b.energie-a.energie);
+  const top3=new Set(sorted.slice(0,3).map(p=>p.dt));
 
   const days=[];let cd=null;
   for(const p of S.previsions){if(!cd||cd.label!==p.label){cd={label:p.label,slots:[]};days.push(cd);}cd.slots.push(p);}
@@ -337,11 +338,11 @@ function buildTable(S,now){
     const vj=verdictJour(day.slots);
     day.slots.forEach((s,si)=>{
       const isFirst=si===0,isSep=isFirst&&di>0;
-      const isNow=s.dt===curKey,isBest=s.dt===bestKey;
+      const isNow=s.dt===curKey,isBest=!isNow&&top3.has(s.dt);
       const sc=(isSep?' sep':'')+(isNow?' col-now':isBest?' col-best':'');
       const tide=nextTide(S.marees,s.jour,s.mois,s.heure);
-      const tc=tide?(tide.type==='H'?'#2a5a8a':'#8a6a2a'):'#bbb';
-      const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#8a6e2a">★</span>':'';
+      const tc=tide?'#2a5a8a':'#bbb';
+      const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#c8a000">★</span>':'';
 
       if(isFirst) R.day.push(`<td class="dc day-cell${sc}${di===0?' today':''}" colspan="${day.slots.length}" style="color:${vj.c}">${day.label}&nbsp;<span style="font-size:7px;opacity:.6">${vj.v}</span></td>`);
 
@@ -411,7 +412,7 @@ function render(){
     container.appendChild(div);
     if(curIdx>=0) setTimeout(()=>{const w=document.getElementById(`w${si}`);if(w)w.scrollLeft=Math.max(0,curIdx*52-52);},80+si*30);
   });
-  document.getElementById('foot').textContent='Open-Meteo · '+spots[0].updated+' · kJ=énergie vague (H²×T²×2) · ◀=maintenant · ★=meilleure 72h';
+  document.getElementById('foot').textContent='Open-Meteo · '+spots[0].updated+' · kJ=énergie vague (H²×T²×2) · ◀=maintenant · ★=top 3';
 }
 document.addEventListener('DOMContentLoaded',render);
 
