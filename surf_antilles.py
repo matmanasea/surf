@@ -187,7 +187,11 @@ body { background: var(--bg); color: var(--txt); font-family: 'IBM Plex Mono', m
   text-align: center; vertical-align: middle; white-space: nowrap; position: relative;
   padding: 0;
 }
-.dc.sep { border-left: 2px solid var(--sep); }
+.dc.sep      { border-left: 2px solid var(--sep); }
+.dc.col-now  { background: #eef5f0 !important; }
+.dc.col-best { background: #f5f0e4 !important; }
+.time-cell.is-now  { background: #2d7a52 !important; color: #fff !important; font-weight: 600; }
+.time-cell.is-best { background: #8a6e2a !important; color: #fff !important; font-weight: 600; }
 
 /* Row heights */
 tr.r-day  td { height: 22px; background: var(--bg2); border-bottom: 1px solid var(--sep); }
@@ -199,9 +203,9 @@ tr.r-wdir td { height: 26px; background: #fafaf8; }
 tr.r-wh   td { height: var(--gh); background: var(--card); }
 tr.r-wp   td { height: var(--gh); background: #fafaf8; }
 tr.r-wkj  td { height: var(--gh); background: var(--card); }
-tr.r-marr td { height: 26px; background: #fafaf8; }
-tr.r-mhbm td { height: 26px; background: var(--card); }
-tr.r-mm   td { height: 26px; background: #fafaf8; }
+tr.r-maree td { height: 52px; background: var(--card); }
+
+
 
 /* Sticky label bg */
 tr.r-day  .lbl { background: var(--bg2); }
@@ -213,15 +217,13 @@ tr.r-wdir .lbl { background: #f5f3f0; }
 tr.r-wh   .lbl { background: var(--bg); }
 tr.r-wp   .lbl { background: #f5f3f0; }
 tr.r-wkj  .lbl { background: var(--bg); }
-tr.r-marr .lbl { background: #f5f3f0; }
-tr.r-mhbm .lbl { background: var(--bg); }
-tr.r-mm   .lbl { background: #f5f3f0; }
+tr.r-maree .lbl { background: var(--bg); }
+
+
 
 .day-cell  { font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--mut); font-weight: 400; padding: 0 4px; }
 .day-cell.today { color: #2d7a52; font-weight: 500; }
 .time-cell { font-size: 10px; color: var(--mut); font-weight: 300; }
-.time-cell.is-now  { color: #2d7a52; font-weight: 600; background: #e8f2ec; }
-.time-cell.is-best { color: #8a6e2a; font-weight: 500; background: #f5f2ea; }
 
 /* ── GAUGE ── */
 .gauge-cell {
@@ -297,6 +299,26 @@ function tHStr(m){
   const h=Math.floor(m.h),mn=Math.round((m.h-h)*60);
   return String(h).padStart(2,'0')+'h'+(mn>0?String(mn).padStart(2,'0'):'');
 }
+function fmtTide(tide){
+  if(!tide)return'<span style="color:var(--fnt);font-size:9px">—</span>';
+  const col=tide.type==='H'?'#2a5a8a':'#8a6a2a';
+  const arr=tide.type==='H'?'↑':'↓';
+  const hstr=tHStr(tide);
+  const hm=tide.m.toFixed(2)+'m';
+  if(tide.type==='H'){
+    return`<div style="display:flex;flex-direction:column;align-items:center;line-height:1.4;gap:0">
+      <span style="font-size:9px;font-weight:600;color:${col}">${hm}</span>
+      <span style="font-size:12px;color:#888;line-height:1">${arr}</span>
+      <span style="font-size:8.5px;color:#888">${hstr}</span>
+    </div>`;
+  } else {
+    return`<div style="display:flex;flex-direction:column;align-items:center;line-height:1.4;gap:0">
+      <span style="font-size:8.5px;color:#888">${hstr}</span>
+      <span style="font-size:12px;color:#888;line-height:1">${arr}</span>
+      <span style="font-size:9px;font-weight:600;color:${col}">${hm}</span>
+    </div>`;
+  }
+}
 
 function buildTable(S,now){
   const nowMs=now.getTime(),ms72=72*3600*1000;
@@ -309,13 +331,14 @@ function buildTable(S,now){
   for(const p of S.previsions){if(!cd||cd.label!==p.label){cd={label:p.label,slots:[]};days.push(cd);}cd.slots.push(p);}
 
   const P=S.previsions;
-  const R={day:[],time:[],vdir:[],vkmh:[],wdir:[],wh:[],wp:[],wkj:[],marr:[],mhbm:[],mm:[]};
+  const R={day:[],time:[],vdir:[],vkmh:[],wdir:[],wh:[],wp:[],wkj:[],maree:[]};
 
   days.forEach((day,di)=>{
     const vj=verdictJour(day.slots);
     day.slots.forEach((s,si)=>{
-      const isFirst=si===0,isSep=isFirst&&di>0,sc=isSep?' sep':'';
+      const isFirst=si===0,isSep=isFirst&&di>0;
       const isNow=s.dt===curKey,isBest=s.dt===bestKey;
+      const sc=(isSep?' sep':'')+(isNow?' col-now':isBest?' col-best':'');
       const tide=nextTide(S.marees,s.jour,s.mois,s.heure);
       const tc=tide?(tide.type==='H'?'#2a5a8a':'#8a6a2a'):'#bbb';
       const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#8a6e2a">★</span>':'';
@@ -339,9 +362,7 @@ function buildTable(S,now){
       R.wkj.push(`<td class="dc${sc}">${gauge(s.energie, 400, '#2a5a8a', s.energie)}</td>`);
 
       // Marée
-      R.marr.push(`<td class="dc${sc}"><span style="color:${tc};font-size:14px">${tide?(tide.type==='H'?'↑':'↓'):'—'}</span></td>`);
-      R.mhbm.push(`<td class="dc${sc}"><span style="color:${tc};font-size:9px">${tide?(tide.type==='H'?'HM':'BM')+' '+tHStr(tide):'—'}</span></td>`);
-      R.mm.push(`<td class="dc${sc}"><span style="color:${tc}">${tide?tide.m.toFixed(2)+'m':'—'}</span></td>`);
+      R.maree.push(`<td class="dc${sc}">${fmtTide(tide)}</td>`);
     });
   });
 
@@ -362,10 +383,8 @@ function buildTable(S,now){
       <tr class="r-wh">  <td class="lbl">m</td>${R.wh.join('')}</tr>
       <tr class="r-wp">  <td class="lbl">s</td>${R.wp.join('')}</tr>
       <tr class="r-wkj"> <td class="lbl">kJ</td>${R.wkj.join('')}</tr>
-      ${sect('Marée m')}
-      <tr class="r-marr"><td class="lbl">↑↓</td>${R.marr.join('')}</tr>
-      <tr class="r-mhbm"><td class="lbl">HM/BM</td>${R.mhbm.join('')}</tr>
-      <tr class="r-mm">  <td class="lbl">m</td>${R.mm.join('')}</tr>
+      ${sect('Marée')}
+      <tr class="r-maree"><td class="lbl">m · h</td>${R.maree.join('')}</tr>
     </tbody>`
   };
 }
