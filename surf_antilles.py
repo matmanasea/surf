@@ -96,7 +96,7 @@ def process_spot(om, ow, nom):
         ws  = ow["hourly"]["wind_speed_10m"][i]        or 0
         wsd = ow["hourly"]["wind_direction_10m"][i]
 
-        energie = round(sh**2 * sp * 5)
+        energie = round(sh**2 * sp**2 * 2)
 
         previsions.append({
             "label":   f"{JOURS_FR[t_ast.weekday()]} {t_ast.day}",
@@ -104,10 +104,10 @@ def process_spot(om, ow, nom):
             "mois":    t_ast.month,
             "heure":   h_local,
             "dt":      t,
-            "wh":      round(wh, 2),
+            "wh":      round(wh, 1),
             "wp":      round(wp, 1),
             "wd":      deg_to_dir(wd),
-            "sh":      round(sh, 2),
+            "sh":      round(sh, 1),
             "sp":      round(sp, 1),
             "sd":      deg_to_dir(sd),
             "energie": energie,
@@ -236,17 +236,17 @@ const arr=(dir,col,sz=13)=>`<span style="display:inline-block;transform:rotate($
 const wCol=v=>v>=30?'#a03030':v>=20?'#8a6e2a':'#2d7a52';
 const sCol=s=>s>=0.8?'#1e5f8a':s>=0.5?'#3a7aaa':'#aaa';
 const hCol=h=>h>=0.8?'#1e6a42':h>=0.5?'#3a8a62':'#aaa';
-const eCol=e=>e>=80?'#2a6a44':e>=40?'#5a7a44':'#bbb';
+const eCol=e=>e>=150?'#2a6a44':e>=50?'#5a7a44':'#bbb';
 
 function verdict(prev,now){
   const fut=prev.filter(x=>new Date(x.dt)>=now).slice(0,24);
   if(!fut.length)return{v:'—',c:'#999'};
   const b=Math.max(...fut.map(x=>x.energie));
-  return b>=120?{v:'GO',c:'#2d7a52'}:b>=60?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
+  return b>=150?{v:'GO',c:'#2d7a52'}:b>=50?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
 }
 function verdictJour(slots){
   const b=Math.max(...slots.map(x=>x.energie));
-  return b>=120?{v:'GO',c:'#2d7a52'}:b>=60?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
+  return b>=150?{v:'GO',c:'#2d7a52'}:b>=50?{v:'BORDERLINE',c:'#8a6e2a'}:{v:'NO-GO',c:'#a03030'};
 }
 function nextTide(marees,jour,mois,heure){
   if(!marees||!marees.length)return null;
@@ -279,7 +279,7 @@ function buildTable(S,now){
       const isNow=s.dt===curKey,isBest=s.dt===bestKey;
       const tide=nextTide(S.marees,s.jour,s.mois,s.heure);
       const tc=tide?(tide.type==='H'?'#2a5a8a':'#8a6a2a'):'#bbb';
-      const ew=Math.min(s.energie/150*100,100);
+      const ew=Math.min(s.energie/400*100,100);
       const badge=isNow?' <span style="font-size:8px;color:#2d7a52">◀</span>':isBest?' <span style="font-size:8px;color:#8a6e2a">★</span>':'';
 
       if(isFirst) R.day.push(`<td class="dc day-cell${sc}${di===0?' today':''}" colspan="${day.slots.length}" style="color:${vj.c}">${day.label}&nbsp;<span style="font-size:7px;opacity:.6">${vj.v}</span></td>`);
